@@ -3,11 +3,11 @@
   <packageId>KyleGivler.BetterTradeColors</packageId>
   <name>Better Trade Colors</name>
   <author>Kyle Givler</author>
-  <description>Better Trade Colors completely overhauls the visual clarity of the trading and caravan interfaces by color-coding items based on quality, durability, and condition. No more squinting or checking info cards to filter out junk—instantly parse everything at a glance.
+  <description>Better Trade Colors completely overhauls the visual clarity of RimWorld by universally color-coding items based on quality, durability, and condition. Instead of being restricted to a single window, these non-intrusive colors apply globally across all item text labels including trade/caravan interfaces, stockpile lists, LWM Deep Storage menus, and the bottom-left inspect panel. No more squinting or checking info cards; instantly parse your items at a glance.
 
 Key Mechanics and Color Priorities:
-- Tainted Apparel (Dim Red/Brown): Instantly catch items stripped from corpses before accidentally buying or selling them.
-- Damaged Goods (Vibrant Magenta): Items under 50% durability are highlighted in sharp purple/magenta, alerting you to low hitpoint gear before making a bad trade.
+- Tainted Apparel (Dim Red/Brown): Instantly catch items stripped from corpses before accidentally using, buying, or selling them.
+- Damaged Goods (Vibrant Magenta): Apparel under 50% durability is highlighted in sharp purple/magenta, alerting you to low hitpoint apparel before it breaks or ruins a pawn's mood.
 - Quality Spectrum: Beautiful, non-clashing colors that map directly to the classic RimWorld quality tiers:
   * Awful / Poor (Greyscale)
   * Normal (White)
@@ -16,21 +16,20 @@ Key Mechanics and Color Priorities:
   * Masterwork (True Orange)
   * Legendary (Cyan / Light Blue)
 
-Compatible with Trade UI Revised
+Compatible with Trade UI Revised, LWM's Deep Storage, and RimHUD.
 
 Technical Focus:
-- Zero Bloat: Built entirely from scratch to avoid the heavy overhead of older UI color mods (looking at you, QualityColors).
-- Ultra High-Performance: Uses lightweight Harmony prefixes on the core UI drawing pipeline. Completely avoids messy Regex replacements, string manipulation, or memory-heavy text caching (looking at you again, QualityColors).
-- Conflict-Free: Safely modifies the rendering colors without altering underlying data structures, maintaining robust compatibility with major UI overhaul mods.
+- Zero Bloat: Built entirely from scratch to avoid the heavy, outdated overhead of older UI color mods (looking at you, QualityColors).
+- Ultra High-Performance: Uses a highly optimized Harmony postfix on the internal string factory pipeline. It injects colors right as text strings are generated, allowing RimWorld to natively cache the color data without repetitive background CPU cycles.
+- Stack-Aware: Intelligently separates item names from quantity multipliers, ensuring item stack counts (e.g., "x75") remain standard UI text colors so they don't break external mod calculations or sorting algorithms.
+- Conflict-Free: Safely modifies string presentation layers without altering underlying data structures or game states.
 
 Plans:
-I wrote this mod because I was unhappy with the architectural mess of QualityColors. While this iteration doesn't do all of the same global features, it provides a strictly better, lightweight foundation for exactly what I need.
+I wrote this mod because I was unhappy with the architectural mess of QualityColors. While this iteration focuses on core utility, it provides a strictly better, lightweight foundation for exactly what I need.
 - Future updates will include customizable colors via a mod menu.
-- Customizable HP percentages for damaged goods.
-
-</description>
+- Customizable HP percentages for damaged goods.</description>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
-  <modVersion>1.0.0</modVersion>
+  <modVersion>0.0.3</modVersion>
 </ModMetaData>

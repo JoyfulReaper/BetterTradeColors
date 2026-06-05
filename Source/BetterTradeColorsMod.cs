@@ -30,7 +30,6 @@ using HarmonyLib;
 using RimWorld;
 using System;
 using System.Reflection;
-using UnityEngine;
 using Verse;
 
 namespace BetterTradeColors
