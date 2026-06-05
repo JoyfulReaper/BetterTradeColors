@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using BetterTradeColors.Settings;
+using HarmonyLib;
 using UnityEngine;
 using Verse;
 

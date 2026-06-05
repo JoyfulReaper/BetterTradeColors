@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <packageId>KyleGivler.BetterTradeColors</packageId>
+  <name>Better Trade Colors</name>
+  <author>Kyle Givler</author>
+  <description>Better Trade Colors completely overhauls the visual clarity of the trading and caravan interfaces by color-coding items based on quality, durability, and condition. No more squinting or checking info cards to filter out junk—instantly parse everything at a glance.
+
+Key Mechanics and Color Priorities:
+- Tainted Apparel (Dim Red/Brown): Instantly catch items stripped from corpses before accidentally buying or selling them.
+- Damaged Goods (Vibrant Magenta): Items under 50% durability are highlighted in sharp purple/magenta, alerting you to low hitpoint gear before making a bad trade.
+- Quality Spectrum: Beautiful, non-clashing colors that map directly to the classic RimWorld quality tiers:
+  * Awful / Poor (Greyscale)
+  * Normal (White)
+  * Good (Soft Green)
+  * Excellent (Yellow / Gold)
+  * Masterwork (True Orange)
+  * Legendary (Cyan / Light Blue)
+
+Technical Focus:
+- Zero Bloat: Built entirely from scratch to avoid the heavy overhead of older UI color mods (looking at you, QualityColors).
+- Ultra High-Performance: Uses lightweight Harmony prefixes on the core UI drawing pipeline. Completely avoids messy Regex replacements, string manipulation, or memory-heavy text caching (looking at you again, QualityColors).
+- Conflict-Free: Safely modifies the rendering colors without altering underlying data structures, maintaining robust compatibility with major UI overhaul mods.
+
+Plans:
+I wrote this mod because I was unhappy with the architectural mess of QualityColors. While this iteration doesn't do all of the same global features, it provides a strictly better, lightweight foundation for exactly what I need.
+- Future updates will include customizable colors via a mod menu.
+- Customizable HP percentages for damaged goods.
+
+</description>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <modVersion>1.0.0</modVersion>
+</ModMetaData>
