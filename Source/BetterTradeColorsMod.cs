@@ -27,11 +27,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using BetterTradeColors.Settings;
 using HarmonyLib;
+using RimWorld;
+using System;
+using System.Reflection;
 using UnityEngine;
 using Verse;
 
 namespace BetterTradeColors
 {
+    [StaticConstructorOnStartup]
     public class BetterTradeColorsMod : Mod
     {
         public static BetterTradeColorsSettings Settings;
@@ -40,20 +44,23 @@ namespace BetterTradeColors
         {
             Settings = GetSettings<BetterTradeColorsSettings>();
             var harmony = new Harmony("com.kylegivler.bettertradecolors");
-            harmony.PatchAll();
 
-            Log.Message($"[BetterTradeColors {Settings.Version}]: Harmony patches applied successfully.");
+            MethodInfo targetMethod = AccessTools.Method(typeof(GenLabel), "NewThingLabel", new Type[] { typeof(Thing), typeof(int), typeof(bool), typeof(bool) });
+
+            if (targetMethod != null)
+            {
+                var postfixMethod = new HarmonyMethod(typeof(Patch_GenLabel_NewThingLabel), nameof(Patch_GenLabel_NewThingLabel.Postfix));
+                harmony.Patch(targetMethod, postfix: postfixMethod);
+            }
+            else
+            {
+                Log.Error("[BetterTradeColors] Failed to find target method GenLabel.NewThingLabel. Colorization disabled.");
+            }
         }
 
         public override string SettingsCategory()
         {
             return "Better Trade Colors";
-        }
-
-        public override void DoSettingsWindowContents(Rect inRect)
-        {
-            //Settings.DoSettingsWindowContents(inRect);
-            base.DoSettingsWindowContents(inRect);
         }
     }
 }
