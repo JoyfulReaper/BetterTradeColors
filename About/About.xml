@@ -16,6 +16,8 @@ Key Mechanics and Color Priorities:
   * Masterwork (True Orange)
   * Legendary (Cyan / Light Blue)
 
+Compatible with Trade UI Revised
+
 Technical Focus:
 - Zero Bloat: Built entirely from scratch to avoid the heavy overhead of older UI color mods (looking at you, QualityColors).
 - Ultra High-Performance: Uses lightweight Harmony prefixes on the core UI drawing pipeline. Completely avoids messy Regex replacements, string manipulation, or memory-heavy text caching (looking at you again, QualityColors).
