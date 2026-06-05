@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="BetterTradeColorsMod.cs" />
     <Compile Include="Patches\GenLabelPatches.cs" />
+    <Compile Include="Patches\GenTextPatches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings\BetterTradeColorsSettings.cs" />
   </ItemGroup>

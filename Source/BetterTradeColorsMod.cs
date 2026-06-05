@@ -43,18 +43,9 @@ namespace BetterTradeColors
         {
             Settings = GetSettings<BetterTradeColorsSettings>();
             var harmony = new Harmony("com.kylegivler.bettertradecolors");
+            harmony.PatchAll();
 
-            MethodInfo targetMethod = AccessTools.Method(typeof(GenLabel), "NewThingLabel", new Type[] { typeof(Thing), typeof(int), typeof(bool), typeof(bool) });
-
-            if (targetMethod != null)
-            {
-                var postfixMethod = new HarmonyMethod(typeof(Patch_GenLabel_NewThingLabel), nameof(Patch_GenLabel_NewThingLabel.Postfix));
-                harmony.Patch(targetMethod, postfix: postfixMethod);
-            }
-            else
-            {
-                Log.Error("[BetterTradeColors] Failed to find target method GenLabel.NewThingLabel. Colorization disabled.");
-            }
+            Log.Message($"[BetterTradeColors {Settings.Version}] Harmony patches applied successfully.");
         }
 
         public override string SettingsCategory()

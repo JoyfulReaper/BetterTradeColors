@@ -33,7 +33,7 @@ namespace BetterTradeColors.Settings
 {
     public class BetterTradeColorsSettings : ModSettings
     {
-        private string _version = "0.0.3";
+        private string _version = "0.0.4";
         private static Vector2 _scrollPos = Vector2.zero;
         private const int _buttonCount = 0;
 
