@@ -27,9 +27,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using BetterTradeColors.Settings;
 using HarmonyLib;
-using RimWorld;
-using System;
-using System.Reflection;
+using UnityEngine;
 using Verse;
 
 namespace BetterTradeColors
@@ -51,6 +49,12 @@ namespace BetterTradeColors
         public override string SettingsCategory()
         {
             return "Better Trade Colors";
+        }
+
+        public override void DoSettingsWindowContents(Rect inRect)
+        {
+            Settings.DoSettingsWindowContents(inRect);
+            base.DoSettingsWindowContents(inRect);
         }
     }
 }
