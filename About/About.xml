@@ -22,7 +22,7 @@ I wrote this mod because I was unhappy with the architectural mess of QualityCol
 
 Technical Focus:
 - Zero Bloat: Built from scratch to avoid the heavy, outdated overhead of legacy UI color mods. (QuailtyColor)
-- Ultra High-Performance & Stability: Uses optimized Harmony patches to inject colors at the string factory level. Includes a custom, cache-aware Rich-Text truncator that prevents UI elements from breaking or cutting off text when color tags are applied.
+- Ultra High-Performance and Stability: Uses optimized Harmony patches to inject colors at the string factory level. Includes a custom, cache-aware Rich-Text truncator that prevents UI elements from breaking or cutting off text when color tags are applied.
 - Stack-Aware: Intelligently separates item names from quantity multipliers, ensuring item stack counts (e.g., "x75") remain standard UI text colors so they don't break external mod calculations or sorting algorithms.
 - Conflict-Free: Safely modifies string presentation layers without altering underlying data structures or game states.
 
