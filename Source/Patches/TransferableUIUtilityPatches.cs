@@ -55,7 +55,7 @@ namespace BetterTradeColors.Patches
                     return;
                 }
 
-                if (thing.def.useHitPoints && thing.MaxHitPoints > 0)
+                if (thing is Apparel && thing.def.useHitPoints && thing.MaxHitPoints > 0)
                 {
                     float hpPercent = (float)thing.HitPoints / thing.MaxHitPoints;
                     if (hpPercent < hpPercentBreakPoint)
