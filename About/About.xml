@@ -16,7 +16,7 @@ Key Mechanics and Color Priorities:
   * Masterwork (True Orange)
   * Legendary (Cyan / Light Blue)
 
-Compatible with Trade UI Revised, LWM's Deep Storage, and RimHUD.
+Compatible with Trade UI Revised, LWM's Deep Storage, and RimHUD, Dynamic Trade Interface and most other mods.
 
 I wrote this mod because I was unhappy with the architectural mess of QualityColors. While this iteration focuses on core utility, it provides an easier to maintain, lightweight foundation for exactly what I need.
 
