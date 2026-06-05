@@ -35,7 +35,7 @@ namespace BetterTradeColors.Settings
     {
         private string _version = "0.0.4";
         private static Vector2 _scrollPos = Vector2.zero;
-        private const int _buttonCount = 0;
+        private const int _buttonCount = 5; // TODO: Just so the message is visible
 
         public string Version => _version;
 
