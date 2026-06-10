@@ -25,7 +25,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
-using System;
 using UnityEngine;
 using Verse;
 
@@ -33,7 +32,12 @@ namespace BetterTradeColors.Settings
 {
     public class BetterTradeColorsSettings : ModSettings
     {
-        private string _version = "0.0.4";
+        private string _version = "0.0.5";
+        private bool _canSaveSettings = false;
+        private bool _colorTainted = true;
+
+        public readonly string MessagePrefix = "[BetterTradeColors]";
+
         private static Vector2 _scrollPos = Vector2.zero;
         private const int _buttonCount = 5; // TODO: Just so the message is visible
 
@@ -44,6 +48,7 @@ namespace BetterTradeColors.Settings
             float calculatedHeight = (_buttonCount * 35f) + 50f;
             Rect viewRect = new Rect(0f, 0f, inRect.width - 20f, calculatedHeight);
 
+
             Widgets.BeginScrollView(inRect, ref _scrollPos, viewRect);
 
             Listing_Standard listing = new Listing_Standard();
@@ -53,7 +58,9 @@ namespace BetterTradeColors.Settings
 
             listing.Label("General Settings", 24f);
             listing.Gap(12f);
-            listing.Label("No Settings YET....", 24f);
+            listing.Label($"If save file access is not allowed settings will not persist.", 24f);
+            listing.Gap(12f);
+            listing.CheckboxLabeled("Allow Access to save file", ref _canSaveSettings);
             listing.Gap(12f);
 
             listing.End();
@@ -63,8 +70,10 @@ namespace BetterTradeColors.Settings
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Values.Look(ref _version, "Version", Version);
+            if (_canSaveSettings)
+            {
+                Scribe_Values.Look(ref _version, "Version", Version);
+            }
         }
     }
-
 }
