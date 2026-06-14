@@ -1,4 +1,3 @@
-﻿@@ -1,95 + 1,55 @@
 ﻿/**BSD 2-Clause License
 
 Copyright (c) 2026, Kyle Givler
