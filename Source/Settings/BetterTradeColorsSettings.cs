@@ -32,8 +32,7 @@ namespace BetterTradeColors.Settings
 {
     public class BetterTradeColorsSettings : ModSettings
     {
-        private string _version = "0.0.5";
-        private bool _canSaveSettings = false;
+        private string _version = "0.1.0";
         private bool _colorTainted = true;
 
         public readonly string MessagePrefix = "[BetterTradeColors]";
@@ -58,10 +57,7 @@ namespace BetterTradeColors.Settings
 
             listing.Label("General Settings", 24f);
             listing.Gap(12f);
-            listing.Label($"If save file access is not allowed settings will not persist.", 24f);
-            listing.Gap(12f);
-            listing.CheckboxLabeled("Allow Access to save file", ref _canSaveSettings);
-            listing.Gap(12f);
+            listing.Label($"None yet!", 24f);
 
             listing.End();
             Widgets.EndScrollView();
@@ -69,11 +65,7 @@ namespace BetterTradeColors.Settings
 
         public override void ExposeData()
         {
-            base.ExposeData();
-            if (_canSaveSettings)
-            {
-                Scribe_Values.Look(ref _version, "Version", Version);
-            }
+            Scribe_Values.Look(ref _version, "Version", Version);
         }
     }
 }

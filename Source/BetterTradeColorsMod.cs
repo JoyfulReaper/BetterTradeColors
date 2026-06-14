@@ -40,10 +40,10 @@ namespace BetterTradeColors
         public BetterTradeColorsMod(ModContentPack content) : base(content)
         {
             Settings = GetSettings<BetterTradeColorsSettings>();
-            var harmony = new Harmony("com.kylegivler.bettertradecolors");
+            var harmony = new Harmony("com.kgivler.bettertradecolors");
             harmony.PatchAll();
 
-            Log.Message($"[BetterTradeColors {Settings.Version}] Harmony patches applied successfully.");
+            Log.Message($"[BetterTradeColors {Settings.Version}]");
         }
 
         public override string SettingsCategory()
