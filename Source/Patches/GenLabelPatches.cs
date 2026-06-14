@@ -1,4 +1,5 @@
-﻿/**BSD 2-Clause License
+﻿/**
+BSD 2-Clause License
 
 Copyright (c) 2026, Kyle Givler
 
@@ -24,9 +25,9 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
+
 using HarmonyLib;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 [HarmonyPatch(typeof(GenLabel), nameof(GenLabel.ThingLabel),
@@ -35,45 +36,51 @@ public static class Patch_GenLabel_ThingLabel
 {
     private const float hpPercentBreakPoint = 0.5f;
 
+    private const string TagTainted = "<color=#B24C4C>"; // 0.7, 0.3, 0.3
+    private const string TagDamaged = "<color=#D933BF>"; // 0.85, 0.2, 0.75
+
+    // QualityCategory is an enum that ranges from 0 (Awful) to 6 (Legendary).
+    // We can cast the enum directly to an integer to pull the string instantly.
+    private static readonly string[] QualityTags = new string[]
+    {
+        "<color=#666666>", // 0: Awful      (0.4, 0.4, 0.4)
+        "<color=#999999>", // 1: Poor       (0.6, 0.6, 0.6)
+        null,              // 2: Normal     (We skip normal)
+        "<color=#66CC66>", // 3: Good       (0.4, 0.8, 0.4)
+        "<color=#CCCC33>", // 4: Excellent  (0.8, 0.8, 0.2)
+        "<color=#FF9933>", // 5: Masterwork (1.0, 0.6, 0.2)
+        "<color=#33CCFF>"  // 6: Legendary  (0.2, 0.8, 1.0)
+    };
+
     public static void Postfix(Thing t, int stackCount, ref string __result)
     {
         if (t == null || string.IsNullOrEmpty(__result))
             return;
 
-        Color? color = GetColorForThing(t);
+        string tag = GetTagForThing(t);
 
-        if (color.HasValue)
+        if (tag != null)
         {
-            // Use hex conversion safely
-            string hex = ColorUtility.ToHtmlStringRGB(color.Value);
-            __result = $"<color=#{hex}>{__result}</color>";
+            // Only one string allocation happens here!
+            __result = $"{tag}{__result}</color>";
         }
     }
 
-    private static Color? GetColorForThing(Thing t)
+    private static string GetTagForThing(Thing t)
     {
         // Tainted Apparel
         if (t is Apparel apparel && apparel.WornByCorpse)
-            return new Color(0.7f, 0.3f, 0.3f);
+            return TagTainted;
 
         // Durability
         if (t.def.useHitPoints && t.MaxHitPoints > 0 &&
            ((float)t.HitPoints / t.MaxHitPoints) < hpPercentBreakPoint)
-            return new Color(0.85f, 0.2f, 0.75f);
+            return TagDamaged;
 
         // Quality
         if (t.TryGetQuality(out QualityCategory qc) && qc != QualityCategory.Normal)
         {
-            return qc switch
-            {
-                QualityCategory.Awful => new Color(0.4f, 0.4f, 0.4f),
-                QualityCategory.Poor => new Color(0.6f, 0.6f, 0.6f),
-                QualityCategory.Good => new Color(0.4f, 0.8f, 0.4f),
-                QualityCategory.Excellent => new Color(0.8f, 0.8f, 0.2f),
-                QualityCategory.Masterwork => new Color(1f, 0.6f, 0.2f),
-                QualityCategory.Legendary => new Color(0.2f, 0.8f, 1f),
-                _ => (Color?)null
-            };
+            return QualityTags[(int)qc];
         }
 
         return null;
