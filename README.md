@@ -27,9 +27,9 @@ We have achieved a **~66% reduction in total average UI CPU time** compared to l
 
 ## 🤝 Compatibility
 Works natively with:
-* LWM's Deep Storage
-* Trade UI Revised
-* RimHUD
+* [LWM's Deep Storage](https://steamcommunity.com/sharedfiles/filedetails/?id=1617282896)
+* [Trade UI Revised](https://steamcommunity.com/sharedfiles/filedetails/?id=2683622537)
+* [RimHUD](https://steamcommunity.com/sharedfiles/filedetails/?id=1508850027)
 
 **Load Order:** Place anywhere in your **UI** section, ideally above your general performance section.
 
