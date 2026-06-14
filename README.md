@@ -23,7 +23,7 @@ Designed from the ground up for modern performance, this mod replaces heavy rege
 
 Works natively with:
 * [LWM's Deep Storage](https://steamcommunity.com/sharedfiles/filedetails/?id=1617282896)
-* [Trade UI Revised](https://steamcommunity.com/sharedfiles/filedetails/?id=3018245496)
+* [Trade UI Revised](https://steamcommunity.com/sharedfiles/filedetails/?id=2683622537)
 * [RimHUD](https://steamcommunity.com/sharedfiles/filedetails/?id=1508850027)
 
 **Load Order:** Place anywhere above your "Performance" section in the "UI" section.
