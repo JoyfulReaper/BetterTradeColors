@@ -18,8 +18,6 @@ namespace BetterTradeColors
 
     static class BTCLog
     {
-        // TODO: Option for if the prefix should be colored or not
-        // the color tags can make the log harder to read
         public static string PrefixColored =>
             $"<color=#66CCFF>{LoggingPrefix}</color>";
 

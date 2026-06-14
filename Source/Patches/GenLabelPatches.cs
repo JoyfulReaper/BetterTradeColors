@@ -1,3 +1,4 @@
+﻿@@ -1,95 + 1,55 @@
 ﻿/**BSD 2-Clause License
 
 Copyright (c) 2026, Kyle Givler
@@ -23,73 +24,59 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
+
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
-using System.Collections.Generic;
 
-namespace BetterTradeColors
+[HarmonyPatch(typeof(GenLabel), nameof(GenLabel.ThingLabel),
+    new[] { typeof(Thing), typeof(int), typeof(bool), typeof(bool) })]
+public static class Patch_GenLabel_ThingLabel
 {
-    // =========================================================================
-    // Inject colors into the core string generation
-    // =========================================================================
-    [HarmonyPatch(typeof(GenLabel), "NewThingLabel", new[] { typeof(Thing), typeof(int), typeof(bool), typeof(bool) })]
-    public static class Patch_GenLabel_NewThingLabel
+    private const float hpPercentBreakPoint = 0.5f;
+
+    public static void Postfix(Thing t, int stackCount, ref string __result)
     {
-        private const float hpPercentBreakPoint = 0.5f;
+        if (t == null || string.IsNullOrEmpty(__result))
+            return;
 
-        public static void Postfix(Thing t, int stackCount, ref string __result)
+        Color? color = GetColorForThing(t);
+
+        if (color.HasValue)
         {
-            if (t == null || string.IsNullOrEmpty(__result))
-                return;
-
-            Color targetColor = Color.white;
-            bool shouldColor = false;
-
-            // Tainted Apparel Check
-            if (t is Apparel apparel && apparel.WornByCorpse)
-            {
-                targetColor = new Color(0.7f, 0.3f, 0.3f); // Dim Red / Brown
-                shouldColor = true;
-            }
-            // Durability Check
-            else if (t is Apparel && t.def.useHitPoints && t.MaxHitPoints > 0 && ((float)t.HitPoints / t.MaxHitPoints) < hpPercentBreakPoint)
-            {
-                targetColor = new Color(0.85f, 0.2f, 0.75f); // Vibrant Magenta / Purple
-                shouldColor = true;
-            }
-            // Quality Tiers
-            else if (t.TryGetQuality(out QualityCategory qc) && qc != QualityCategory.Normal)
-            {
-                shouldColor = true;
-                if (qc == QualityCategory.Awful) targetColor = new Color(0.4f, 0.4f, 0.4f); // Dark Grey
-                else if (qc == QualityCategory.Poor) targetColor = new Color(0.6f, 0.6f, 0.6f); // Light Grey
-                else if (qc == QualityCategory.Good) targetColor = new Color(0.4f, 0.8f, 0.4f); // Soft Green
-                else if (qc == QualityCategory.Excellent) targetColor = new Color(0.8f, 0.8f, 0.2f); // Yellow / Gold
-                else if (qc == QualityCategory.Masterwork) targetColor = new Color(1f, 0.6f, 0.2f);   // True Orange
-                else if (qc == QualityCategory.Legendary) targetColor = new Color(0.2f, 0.8f, 1f);   // Cyan / Light Blue
-                else shouldColor = false;
-            }
-
-            if (shouldColor)
-            {
-                Color32 c = targetColor;
-                string hexColor = $"{c.r:X2}{c.g:X2}{c.b:X2}";
-
-                if (stackCount > 1)
-                {
-                    string countSuffix = " x" + stackCount.ToStringCached();
-                    if (__result.EndsWith(countSuffix))
-                    {
-                        string cleanLabel = __result.Substring(0, __result.Length - countSuffix.Length);
-                        __result = $"<color=#{hexColor}>{cleanLabel}</color>{countSuffix}";
-                        return;
-                    }
-                }
-
-                __result = $"<color=#{hexColor}>{__result}</color>";
-            }
+            // Use hex conversion safely
+            string hex = ColorUtility.ToHtmlStringRGB(color.Value);
+            __result = $"<color=#{hex}>{__result}</color>";
         }
+    }
+
+    private static Color? GetColorForThing(Thing t)
+    {
+        // Tainted Apparel
+        if (t is Apparel apparel && apparel.WornByCorpse)
+            return new Color(0.7f, 0.3f, 0.3f);
+
+        // Durability
+        if (t.def.useHitPoints && t.MaxHitPoints > 0 &&
+           ((float)t.HitPoints / t.MaxHitPoints) < hpPercentBreakPoint)
+            return new Color(0.85f, 0.2f, 0.75f);
+
+        // Quality
+        if (t.TryGetQuality(out QualityCategory qc) && qc != QualityCategory.Normal)
+        {
+            return qc switch
+            {
+                QualityCategory.Awful => new Color(0.4f, 0.4f, 0.4f),
+                QualityCategory.Poor => new Color(0.6f, 0.6f, 0.6f),
+                QualityCategory.Good => new Color(0.4f, 0.8f, 0.4f),
+                QualityCategory.Excellent => new Color(0.8f, 0.8f, 0.2f),
+                QualityCategory.Masterwork => new Color(1f, 0.6f, 0.2f),
+                QualityCategory.Legendary => new Color(0.2f, 0.8f, 1f),
+                _ => (Color?)null
+            };
+        }
+
+        return null;
     }
 }
