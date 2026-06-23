@@ -67,8 +67,7 @@ For optimal initialization, place the module within the **UI** subdivision of yo
 
 ## 7.0 LEGAL & COMPLIANCE
 
-**DISTRIBUTION NOTICE:** This framework is distributed under the terms of the BSD 2-Clause License.
-
+**DISTRIBUTION NOTICE:** This framework is distributed under the terms of the BSD 2-Clause License.  
 **TECHNICAL FOOTNOTE:** Portions of this system architecture were developed utilizing artificial intelligence generation protocols.
 
 ---
