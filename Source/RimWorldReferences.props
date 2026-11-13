@@ -1,0 +1,39 @@
+<Project>
+  <PropertyGroup>
+    <RimWorldVersion Condition="'$(RimWorldVersion)' == ''">1.7</RimWorldVersion>
+    <RimWorldDir Condition="'$(RimWorldDir)' == ''">H:\SteamLibrary\steamapps\common\RimWorld</RimWorldDir>
+    <HarmonyDir Condition="'$(HarmonyDir)' == ''">H:\SteamLibrary\steamapps\workshop\content\294100\2009463077</HarmonyDir>
+    <RimWorldManagedDir Condition="'$(RimWorldVersion)' == '1.7'">$(RimWorldDir)</RimWorldManagedDir>
+    <RimWorldManagedDir Condition="'$(RimWorldVersion)' == '1.6'">$(RimWorldDir)\RimWorldWin64_Data\Managed</RimWorldManagedDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldManagedDir)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityStubs" Condition="'$(RimWorldVersion)' == '1.7'">
+      <HintPath>$(RimWorldDir)\UnityStubs.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule" Condition="'$(RimWorldVersion)' == '1.6'">
+      <HintPath>$(RimWorldManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(HarmonyDir)\$(RimWorldVersion)\Assemblies\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="ValidateRimWorldReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="'$(RimWorldVersion)' != '1.6' And '$(RimWorldVersion)' != '1.7'"
+           Text="RimWorldVersion must be 1.6 or 1.7." />
+    <Error Condition="'$(RimWorldVersion)' == '1.7' And (!Exists('$(RimWorldDir)\Assembly-CSharp.dll') Or !Exists('$(RimWorldDir)\UnityStubs.dll'))"
+           Text="Set RimWorldDir to a RimWorld 1.7 installation containing Assembly-CSharp.dll and UnityStubs.dll." />
+    <Error Condition="'$(RimWorldVersion)' == '1.6' And (!Exists('$(RimWorldManagedDir)\Assembly-CSharp.dll') Or !Exists('$(RimWorldManagedDir)\UnityEngine.CoreModule.dll'))"
+           Text="Set RimWorldDir to a RimWorld 1.6 installation containing RimWorldWin64_Data/Managed/Assembly-CSharp.dll and UnityEngine.CoreModule.dll." />
+    <Error Condition="!Exists('$(HarmonyDir)\$(RimWorldVersion)\Assemblies\0Harmony.dll')"
+           Text="Set HarmonyDir to the Harmony mod directory containing $(RimWorldVersion)/Assemblies/0Harmony.dll (Harmony 3 for 1.7, Harmony 2 for 1.6)." />
+  </Target>
+</Project>

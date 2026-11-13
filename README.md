@@ -46,6 +46,8 @@ The underlying pipeline represents an aggressive optimization refactor over lega
 
 ## 5.0 COMPATIBILITY & DEPLOYMENT MATRIX
 
+Supports **RimWorld 1.6 and 1.7**. Version 1.7 uses a separate .NET 10 assembly with Harmony 3; version 1.6 retains the existing assembly. See [BUILDING.md](BUILDING.md) for build instructions, packaging details, validation results, and remaining in-game checks.
+
 ### 5.1 Verified Environments
 
 The framework features native interoperability with the following user interface configurations:

@@ -32,8 +32,7 @@ namespace BetterTradeColors.Settings
 {
     public class BetterTradeColorsSettings : ModSettings
     {
-        private string _version = "0.2.0";
-        private bool _colorTainted = true;
+        private string _version = "0.3.0";
 
         public readonly string MessagePrefix = "[BetterTradeColors]";
 
