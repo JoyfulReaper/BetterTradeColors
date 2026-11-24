@@ -1,4 +1,4 @@
-﻿/**
+/**
 BSD 2-Clause License
 
 Copyright (c) 2026, Kyle Givler
@@ -25,6 +25,9 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
+using System;
+using System.Globalization;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -32,39 +35,203 @@ namespace BetterTradeColors.Settings
 {
     public class BetterTradeColorsSettings : ModSettings
     {
-        private string _version = "0.3.0";
+        private const int DefaultDamageThreshold = 50;
+        private const int QualityCount = 7;
+        internal const int TaintedColor = QualityCount;
+        internal const int DamagedColor = QualityCount + 1;
 
+        private static readonly string[] ColorKeys =
+        {
+            "AwfulColor", "PoorColor", "NormalColor", "GoodColor", "ExcellentColor",
+            "MasterworkColor", "LegendaryColor", "TaintedColor", "DamagedColor"
+        };
+
+        private static readonly string[] DefaultColors =
+        {
+            "#666666", "#999999", "", "#66CC66", "#CCCC33", "#FF9933", "#33CCFF", "#B24C4C", "#D933BF"
+        };
+
+        private readonly string[] _colors = new string[DefaultColors.Length];
+        private readonly string[] _colorTags = new string[DefaultColors.Length];
+        private readonly Color[] _colorPreviews = new Color[DefaultColors.Length];
+        private readonly string[] _colorInputs = new string[DefaultColors.Length];
+        private readonly bool[] _invalidColorInputs = new bool[DefaultColors.Length];
+        private Listing_Standard _listing;
+        private Vector2 _scrollPosition;
+        private float _contentHeight;
+        private int _damageThreshold;
+
+        internal bool ColorQuality;
+        internal bool ColorTainted;
+        internal bool ColorDamaged;
+
+        internal int DamageThreshold
+        {
+            get => _damageThreshold;
+            set => _damageThreshold = Math.Min(100, Math.Max(0, value));
+        }
+
+        internal string TaintedTag => _colorTags[TaintedColor];
+        internal string DamagedTag => _colorTags[DamagedColor];
+
+        public string Version => "0.3.0";
         public readonly string MessagePrefix = "[BetterTradeColors]";
 
-        private static Vector2 _scrollPos = Vector2.zero;
-        private const int _buttonCount = 5; // TODO: Just so the message is visible
+        public BetterTradeColorsSettings()
+        {
+            ResetDefaults();
+        }
 
-        public string Version => _version;
+        internal string QualityTag(QualityCategory quality)
+        {
+            int index = (int)quality;
+            return (uint)index < QualityCount ? _colorTags[index] : null;
+        }
+
+        internal void ResetDefaults()
+        {
+            ColorQuality = ColorTainted = ColorDamaged = true;
+            DamageThreshold = DefaultDamageThreshold;
+            for (int i = 0; i < DefaultColors.Length; i++)
+                TrySetColor(i, DefaultColors[i]);
+            ClearColorInputs();
+        }
+
+        internal void ClearColorInputs()
+        {
+            Array.Clear(_colorInputs, 0, _colorInputs.Length);
+            Array.Clear(_invalidColorInputs, 0, _invalidColorInputs.Length);
+        }
+
+        internal bool TrySetColor(int index, string input)
+        {
+            string hex = input?.Trim() ?? "";
+            if (index == (int)QualityCategory.Normal && hex.Length == 0)
+            {
+                _colors[index] = "";
+                _colorTags[index] = null;
+                return true;
+            }
+
+            if (hex.Length > 0 && hex[0] == '#')
+                hex = hex.Substring(1);
+
+            if (hex.Length != 6 || hex.IndexOf('\0') >= 0 ||
+                !uint.TryParse(hex, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out uint rgb))
+                return false;
+
+            string canonical = "#" + hex.ToUpperInvariant();
+            if (canonical != _colors[index])
+            {
+                _colors[index] = canonical;
+                _colorTags[index] = "<color=" + canonical + ">";
+                _colorPreviews[index] = new Color((rgb >> 16) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f);
+            }
+            return true;
+        }
 
         public void DoSettingsWindowContents(Rect inRect)
         {
-            float calculatedHeight = (_buttonCount * 35f) + 50f;
-            Rect viewRect = new Rect(0f, 0f, inRect.width - 20f, calculatedHeight);
+            float width = inRect.width - 20f;
+            if (width <= 40f || inRect.height <= 0f)
+                return;
 
+            var viewRect = new Rect(0f, 0f, width, Math.Max(inRect.height, _contentHeight));
+            _listing ??= new Listing_Standard { maxOneColumn = true };
+            Widgets.BeginScrollView(inRect, ref _scrollPosition, viewRect);
+            _listing.Begin(viewRect);
+            _listing.Label("BTC_SettingsVersion".Translate(Version));
+            _listing.Gap();
 
-            Widgets.BeginScrollView(inRect, ref _scrollPos, viewRect);
+            float labelWidth = (width - 28f) / width;
+            _listing.CheckboxLabeled("BTC_ColorQuality".Translate(), ref ColorQuality, labelPct: labelWidth);
+            _listing.CheckboxLabeled("BTC_ColorTainted".Translate(), ref ColorTainted, labelPct: labelWidth);
+            _listing.CheckboxLabeled("BTC_ColorDamaged".Translate(), ref ColorDamaged, labelPct: labelWidth);
+            _listing.Gap();
+            _listing.Label("BTC_DamageThreshold".Translate(DamageThreshold));
+            DamageThreshold = (int)Widgets.HorizontalSlider(_listing.GetRect(22f), DamageThreshold, 0f, 100f, roundTo: 1f);
 
-            Listing_Standard listing = new Listing_Standard();
-            listing.Begin(viewRect);
-            listing.Label($"Version {Version}", 24f);
-            listing.Gap(12f);
+            _listing.Gap();
+            _listing.Label("BTC_ColorHelp".Translate());
+            _listing.Gap(6f);
+            for (int i = 0; i < QualityCount; i++)
+                DrawColorRow(i, ((QualityCategory)i).GetLabel().CapitalizeFirst());
+            DrawColorRow(TaintedColor, "BTC_TaintedColor".Translate());
+            DrawColorRow(DamagedColor, "BTC_DamagedColor".Translate());
 
-            listing.Label("General Settings", 24f);
-            listing.Gap(12f);
-            listing.Label($"None yet!", 24f);
-
-            listing.End();
+            _listing.Gap();
+            string resetLabel = "BTC_ResetDefaults".Translate();
+            if (Widgets.ButtonText(_listing.GetRect(Math.Max(30f, Text.CalcHeight(resetLabel, width - 12f) + 8f)), resetLabel))
+                ResetDefaults();
+            _contentHeight = _listing.CurHeight;
+            _listing.End();
             Widgets.EndScrollView();
+        }
+
+        private void DrawColorRow(int index, string label)
+        {
+            const float fieldWidth = 100f;
+            const float controlHeight = 26f;
+            const float swatchSize = 20f;
+            const float gap = 8f;
+            float width = _listing.ColumnWidth;
+            bool stacked = width < 260f;
+            float labelWidth = stacked ? width : width - fieldWidth - swatchSize - 2f * gap;
+            float labelHeight = Text.CalcHeight(label, labelWidth);
+            Rect row = _listing.GetRect(stacked ? labelHeight + controlHeight : Math.Max(controlHeight, labelHeight));
+            Widgets.Label(new Rect(row.x, row.y, labelWidth, labelHeight), label);
+
+            float fieldX = stacked ? row.x : row.xMax - fieldWidth - swatchSize - gap;
+            float fieldY = stacked ? row.y + labelHeight : row.y;
+            float actualFieldWidth = Math.Min(fieldWidth, width - swatchSize - gap);
+            var field = new Rect(fieldX, fieldY, actualFieldWidth, controlHeight);
+            string previousInput = _colorInputs[index] ?? _colors[index];
+            string input = Widgets.TextField(field, previousInput, 7);
+            if (input != previousInput)
+            {
+                _colorInputs[index] = input;
+                _invalidColorInputs[index] = !TrySetColor(index, input);
+            }
+
+            if (_invalidColorInputs[index])
+                TooltipHandler.TipRegion(field, "BTC_InvalidColor".Translate());
+            if (_colorTags[index] != null)
+                Widgets.DrawBoxSolidWithOutline(new Rect(field.xMax + gap, fieldY + 3f, swatchSize, swatchSize),
+                    _colorPreviews[index], Color.gray);
+            _listing.Gap(4f);
         }
 
         public override void ExposeData()
         {
-            Scribe_Values.Look(ref _version, "Version", Version);
+            LookToggle(ref ColorQuality, "ColorQuality");
+            LookToggle(ref ColorTainted, "ColorTainted");
+            LookToggle(ref ColorDamaged, "ColorDamaged");
+            string threshold = _damageThreshold.ToString(CultureInfo.InvariantCulture);
+            Scribe_Values.Look(ref threshold, "DamageThreshold", DefaultDamageThreshold.ToString(CultureInfo.InvariantCulture));
+
+            bool loading = Scribe.mode == LoadSaveMode.LoadingVars;
+            for (int i = 0; i < _colors.Length; i++)
+            {
+                string color = _colors[i];
+                Scribe_Values.Look(ref color, ColorKeys[i], DefaultColors[i]);
+                if (loading && !TrySetColor(i, color))
+                    TrySetColor(i, DefaultColors[i]);
+            }
+
+            if (loading)
+            {
+                DamageThreshold = int.TryParse(threshold, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value)
+                    ? value : DefaultDamageThreshold;
+                ClearColorInputs();
+            }
+        }
+
+        private static void LookToggle(ref bool enabled, string key)
+        {
+            string value = enabled.ToString();
+            Scribe_Values.Look(ref value, key, bool.TrueString);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                enabled = !bool.TryParse(value, out bool parsed) || parsed;
         }
     }
 }

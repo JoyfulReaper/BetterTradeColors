@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <BTC_SettingsVersion>Version {0}</BTC_SettingsVersion>
+  <BTC_ColorQuality>Color item quality</BTC_ColorQuality>
+  <BTC_ColorTainted>Color tainted apparel</BTC_ColorTainted>
+  <BTC_ColorDamaged>Color damaged items</BTC_ColorDamaged>
+  <BTC_DamageThreshold>Color items below {0}% durability</BTC_DamageThreshold>
+  <BTC_ColorHelp>Enter six RGB hex digits, such as #33CCFF. The swatch shows the last valid color. Leave Normal blank to keep its default text color.</BTC_ColorHelp>
+  <BTC_TaintedColor>Tainted apparel</BTC_TaintedColor>
+  <BTC_DamagedColor>Damaged items</BTC_DamagedColor>
+  <BTC_InvalidColor>Enter six RGB hex digits. This edit has not been applied.</BTC_InvalidColor>
+  <BTC_ResetDefaults>Reset to defaults</BTC_ResetDefaults>
+</LanguageData>

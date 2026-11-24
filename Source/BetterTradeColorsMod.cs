@@ -1,4 +1,4 @@
-﻿/**
+/**
 BSD 2-Clause License
 
 Copyright (c) 2026, Kyle Givler
@@ -41,7 +41,7 @@ namespace BetterTradeColors
         {
             Settings = GetSettings<BetterTradeColorsSettings>();
             var harmony = new Harmony("com.kgivler.bettertradecolors");
-            harmony.PatchAll();
+            harmony.PatchAll(typeof(BetterTradeColorsMod).Assembly);
 
             Log.Message($"[BetterTradeColors {Settings.Version}]");
         }
@@ -55,6 +55,12 @@ namespace BetterTradeColors
         {
             Settings.DoSettingsWindowContents(inRect);
             base.DoSettingsWindowContents(inRect);
+        }
+
+        public override void WriteSettings()
+        {
+            base.WriteSettings();
+            Settings.ClearColorInputs();
         }
     }
 }

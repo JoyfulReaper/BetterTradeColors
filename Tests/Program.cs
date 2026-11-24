@@ -10,6 +10,7 @@ using System.Runtime.Loader;
 using System.Xml;
 using BetterTradeColors;
 using BetterTradeColors.Patches;
+using BetterTradeColors.Settings;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -43,6 +44,7 @@ internal static class Program
     private static int RunChecks()
     {
         const string owner = "BetterTradeColors.CompatibilityChecks";
+        BetterTradeColorsMod.Settings = new BetterTradeColorsSettings();
         var harmony = new Harmony(owner);
         try
         {
@@ -81,6 +83,10 @@ internal static class Program
             Patch_GenLabel_ThingLabel.Postfix(apparel, 1, ref label);
             Check(label == "<color=#B24C4C>tainted item</color>", "Taint overrides damage");
 
+            VerifyColorSettings(thing, apparel);
+            AccessTools.Field(typeof(Prefs), "data").SetValue(null, new PrefsData());
+            VerifySettingsXml();
+
             string input = "<color=#33CCFF>test item</color>";
             // Disable tiny fonts in the fixture so Text does not need player preferences.
             LanguageDatabase.activeLanguage = new LoadedLanguage("English")
@@ -104,6 +110,158 @@ internal static class Program
         }
     }
 
+    private static void VerifyColorSettings(ThingWithComps thing, Apparel apparel)
+    {
+        var settings = BetterTradeColorsMod.Settings;
+        apparel.compQuality = thing.compQuality;
+        thing.HitPoints = 49;
+
+        settings.ColorTainted = false;
+        Check(ColorLabel(apparel) == "<color=#D933BF>test item</color>", "Disabling taint falls through to damage");
+        settings.ColorDamaged = false;
+        Check(ColorLabel(apparel) == "<color=#33CCFF>test item</color>", "Disabling damage falls through to quality");
+        settings.ColorQuality = false;
+        Check(ColorLabel(apparel) == "test item", "All three toggles can be disabled");
+        settings.ColorTainted = true;
+        Check(ColorLabel(apparel) == "<color=#B24C4C>test item</color>", "Taint works with damage and quality disabled");
+        settings.ColorTainted = false;
+        settings.ColorDamaged = true;
+        Check(ColorLabel(apparel) == "<color=#D933BF>test item</color>", "Damage works with taint and quality disabled");
+
+        settings.DamageThreshold = 75;
+        thing.HitPoints = 74;
+        Check(GenLabel.ThingLabel(thing, 1, false, false) == "<color=#D933BF>test item</color>", "Custom threshold colors non-apparel below the boundary");
+        thing.HitPoints = 75;
+        Check(GenLabel.ThingLabel(thing, 1, false, false) == "test item", "Custom threshold excludes its exact boundary");
+        thing.HitPoints = 76;
+        Check(ColorLabel(thing) == "test item", "HP above the threshold is uncolored");
+        thing.HitPoints = 0;
+        settings.DamageThreshold = -1;
+        Check(settings.DamageThreshold == 0 && ColorLabel(thing) == "test item", "Zero threshold leaves zero HP uncolored");
+        settings.DamageThreshold = 120;
+        thing.HitPoints = 99;
+        Check(settings.DamageThreshold == 100 && ColorLabel(thing) == "<color=#D933BF>test item</color>", "100% threshold colors 99% HP");
+        thing.HitPoints = 100;
+        Check(ColorLabel(thing) == "test item", "100% threshold excludes full HP");
+
+        settings.ColorQuality = true;
+        string originalTag = settings.QualityTag(QualityCategory.Legendary);
+        Check(settings.TrySetColor((int)QualityCategory.Legendary, "  badeed  "), "Hex colors accept lowercase and an optional hash");
+        string customTag = settings.QualityTag(QualityCategory.Legendary);
+        Check(customTag == "<color=#BADEED>" && !ReferenceEquals(originalTag, customTag), "Editing a color refreshes its cached tag");
+        Check(ReferenceEquals(customTag, settings.QualityTag(QualityCategory.Legendary)), "Lookups reuse the cached tag");
+        Check(settings.TrySetColor((int)QualityCategory.Legendary, "#badeed")
+            && ReferenceEquals(customTag, settings.QualityTag(QualityCategory.Legendary)), "Equivalent edits reuse the cached tag");
+        Check(GenLabel.ThingLabel(thing, 1, false, false) == "<color=#BADEED>test item</color>", "Live palette applies above vanilla's cached label");
+        Check(!settings.TrySetColor((int)QualityCategory.Legendary, "#00ZZ99")
+            && !settings.TrySetColor((int)QualityCategory.Legendary, "#00AA99FF")
+            && !settings.TrySetColor((int)QualityCategory.Legendary, "#12345\0")
+            && !settings.TrySetColor((int)QualityCategory.Legendary, null)
+            && ReferenceEquals(customTag, settings.QualityTag(QualityCategory.Legendary)), "Malformed colors leave the valid cached tag intact");
+
+        Check(settings.TrySetColor(BetterTradeColorsSettings.TaintedColor, "#102030")
+            && settings.TrySetColor(BetterTradeColorsSettings.DamagedColor, "#ABCDEF"), "Both condition colors can be set");
+        settings.ColorTainted = true;
+        Check(ColorLabel(apparel) == "<color=#102030>test item</color>", "Custom taint overrides custom damage");
+        settings.ColorTainted = false;
+        Check(ColorLabel(apparel) == "<color=#ABCDEF>test item</color>", "Custom damage overrides quality");
+
+        FieldInfo qualityField = AccessTools.Field(typeof(CompQuality), "qualityInt");
+        qualityField.SetValue(thing.compQuality, QualityCategory.Normal);
+        Check(settings.TrySetColor((int)QualityCategory.Normal, "#00AB12")
+            && ColorLabel(thing) == "<color=#00AB12>test item</color>", "Normal accepts a custom color");
+        Check(ColorLabel(new ThingWithComps { def = thing.def, HitPoints = 100 }) == "test item", "Normal color requires actual item quality");
+        Check(settings.TrySetColor((int)QualityCategory.Normal, "")
+            && ColorLabel(thing) == "test item", "Clearing Normal restores vanilla text");
+        qualityField.SetValue(thing.compQuality, (QualityCategory)255);
+        Check(GenLabel.ThingLabel(thing, 1, false, false) == "test item", "Unsupported quality passes through");
+        Check(ColorLabel(null) == "test item" && ColorLabel(new ThingWithComps()) == "test item"
+            && ColorLabel(thing, null) == null && ColorLabel(thing, "") == "", "Missing inputs pass through the postfix");
+
+        settings.ColorQuality = settings.ColorTainted = settings.ColorDamaged = false;
+        settings.ResetDefaults();
+        Check(settings.ColorQuality && settings.ColorTainted && settings.ColorDamaged && settings.DamageThreshold == 50,
+            "Reset restores toggles and threshold");
+        Check(settings.QualityTag(QualityCategory.Normal) == null
+            && settings.QualityTag(QualityCategory.Legendary) == "<color=#33CCFF>"
+            && settings.TaintedTag == "<color=#B24C4C>" && settings.DamagedTag == "<color=#D933BF>", "Reset restores original color tags");
+    }
+
+    private static string ColorLabel(Thing thing, string label = "test item")
+    {
+        Patch_GenLabel_ThingLabel.Postfix(thing, 1, ref label);
+        return label;
+    }
+
+    private static void VerifySettingsXml()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<SettingsBlock><ModSettings><Version>0.3.0</Version></ModSettings></SettingsBlock>");
+            var settings = ReadSettings(path);
+            Check(settings.ColorQuality && settings.ColorTainted && settings.ColorDamaged
+                && settings.DamageThreshold == 50 && settings.QualityTag(QualityCategory.Normal) == null
+                && settings.QualityTag(QualityCategory.Awful) == "<color=#666666>", "Legacy settings load with the previous default behavior");
+
+            File.WriteAllText(path, """
+                <SettingsBlock>
+                  <ModSettings>
+                    <ColorQuality>invalid</ColorQuality>
+                    <ColorTainted>False</ColorTainted>
+                    <DamageThreshold>not an integer</DamageThreshold>
+                    <AwfulColor>#bad</AwfulColor>
+                    <NormalColor>  11aa22  </NormalColor>
+                  </ModSettings>
+                </SettingsBlock>
+                """);
+            settings = ReadSettings(path);
+            Check(settings.ColorQuality && !settings.ColorTainted && settings.ColorDamaged && settings.DamageThreshold == 50
+                && settings.QualityTag(QualityCategory.Awful) == "<color=#666666>"
+                && settings.QualityTag(QualityCategory.Normal) == "<color=#11AA22>", "Malformed saved values fall back and valid colors normalize");
+
+            File.WriteAllText(path, "<SettingsBlock><ModSettings><DamageThreshold>120</DamageThreshold></ModSettings></SettingsBlock>");
+            Check(ReadSettings(path).DamageThreshold == 100, "Saved out-of-range threshold is clamped");
+
+            settings.ColorQuality = false;
+            settings.ColorDamaged = false;
+            settings.DamageThreshold = 64;
+            settings.TrySetColor(BetterTradeColorsSettings.DamagedColor, "011223");
+            Scribe.saver.InitSaving(path, "SettingsBlock");
+            try
+            {
+                Scribe_Deep.Look(ref settings, "ModSettings");
+            }
+            finally
+            {
+                Scribe.saver.FinalizeSaving();
+            }
+            var reloaded = ReadSettings(path);
+            Check(!reloaded.ColorQuality && !reloaded.ColorTainted && !reloaded.ColorDamaged && reloaded.DamageThreshold == 64
+                && reloaded.DamagedTag == "<color=#011223>" && reloaded.QualityTag(QualityCategory.Normal) == "<color=#11AA22>",
+                "Scribe round trip restores toggles, threshold, and cached colors");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static BetterTradeColorsSettings ReadSettings(string path)
+    {
+        BetterTradeColorsSettings settings = null;
+        Scribe.loader.InitLoading(path);
+        try
+        {
+            Scribe_Deep.Look(ref settings, "ModSettings");
+        }
+        finally
+        {
+            Scribe.loader.FinalizeLoading();
+        }
+        return settings;
+    }
+
     private static bool MaxHitPoints(ref int __result)
     {
         __result = 100;
@@ -119,6 +277,15 @@ internal static class Program
         foreach (string version in new[] { "1.6", "1.7" })
         {
             var paths = folders.FoldersForVersion(version);
+            if (version == "1.7")
+            {
+                string localizationPath = paths.Select(folder =>
+                    Path.Combine(folder.folderName, "Languages", "English", "Keyed", "BetterTradeColors.xml")).Single(File.Exists);
+                var localization = new XmlDocument();
+                localization.Load(localizationPath);
+                Check(localization.DocumentElement.Name == "LanguageData" &&
+                    localization.DocumentElement["BTC_ResetDefaults"] != null, "1.7 load folders include Phase 1 localization");
+            }
             var assemblies = paths.SelectMany(folder => Directory.GetFiles(
                 Path.Combine(folder.folderName, "Assemblies"), "*.dll")).ToArray();
             Check(assemblies.Length == 1 && Path.GetFileName(assemblies[0]) == "BetterTradeColors.dll",
