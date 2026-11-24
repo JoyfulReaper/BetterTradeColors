@@ -37,11 +37,11 @@ internal static partial class Program
             return null;
         };
 
-        return RunChecks();
+        return RunChecks(args[0]);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static int RunChecks()
+    private static int RunChecks(string rimWorldDir)
     {
         const string owner = "BetterTradeColors.CompatibilityChecks";
         BetterTradeColorsMod.Settings = new BetterTradeColorsSettings();
@@ -88,6 +88,7 @@ internal static partial class Program
             VerifySettingsXml();
 
             VerifyRichText(thing);
+            VerifyRoomQuality(rimWorldDir, owner);
             VerifyLoadFolders();
             Console.WriteLine("Compatibility checks passed. In-game rendering still requires verification.");
             return 0;
@@ -190,7 +191,7 @@ internal static partial class Program
             var settings = ReadSettings(path);
             Check(settings.ColorQuality && settings.ColorTainted && settings.ColorDamaged
                 && settings.DamageThreshold == 50 && settings.QualityTag(QualityCategory.Normal) == null
-                && settings.QualityTag(QualityCategory.Awful) == "<color=#666666>", "Legacy settings load with the previous default behavior");
+                && settings.QualityTag(QualityCategory.Awful) == "<color=#666666>" && !settings.RoomFormattingEnabled, "Legacy settings load with the previous default behavior");
 
             File.WriteAllText(path, """
                 <SettingsBlock>
@@ -199,6 +200,10 @@ internal static partial class Program
                     <ColorTainted>False</ColorTainted>
                     <DamageThreshold>not an integer</DamageThreshold>
                     <AwfulColor>#bad</AwfulColor>
+                    <ColorRoomQuality>broken</ColorRoomQuality>
+                    <ShowRoomStage>invalid</ShowRoomStage>
+                    <RoomColor1>#bad</RoomColor1>
+                    <RoomColor7>  a1b2c3  </RoomColor7>
                     <NormalColor>  11aa22  </NormalColor>
                   </ModSettings>
                 </SettingsBlock>
@@ -206,7 +211,9 @@ internal static partial class Program
             settings = ReadSettings(path);
             Check(settings.ColorQuality && !settings.ColorTainted && settings.ColorDamaged && settings.DamageThreshold == 50
                 && settings.QualityTag(QualityCategory.Awful) == "<color=#666666>"
-                && settings.QualityTag(QualityCategory.Normal) == "<color=#11AA22>", "Malformed saved values fall back and valid colors normalize");
+                && settings.QualityTag(QualityCategory.Normal) == "<color=#11AA22>" && !settings.RoomFormattingEnabled
+                && settings.RoomQualityTag(0, 2) == "<color=#666666>" && settings.RoomQualityTag(1, 2) == "<color=#A1B2C3>",
+                "Malformed saved values fall back and valid colors normalize");
 
             File.WriteAllText(path, "<SettingsBlock><ModSettings><DamageThreshold>120</DamageThreshold></ModSettings></SettingsBlock>");
             Check(ReadSettings(path).DamageThreshold == 100, "Saved out-of-range threshold is clamped");
@@ -214,6 +221,9 @@ internal static partial class Program
             settings.ColorQuality = false;
             settings.ColorDamaged = false;
             settings.DamageThreshold = 64;
+            settings.ColorRoomQuality = true;
+            settings.ShowRoomStage = true;
+            settings.TrySetRoomColor(0, "#123abc");
             settings.TrySetColor(BetterTradeColorsSettings.DamagedColor, "011223");
             Scribe.saver.InitSaving(path, "SettingsBlock");
             try
@@ -228,6 +238,8 @@ internal static partial class Program
             Check(!reloaded.ColorQuality && !reloaded.ColorTainted && !reloaded.ColorDamaged && reloaded.DamageThreshold == 64
                 && reloaded.DamagedTag == "<color=#011223>" && reloaded.QualityTag(QualityCategory.Normal) == "<color=#11AA22>",
                 "Scribe round trip restores toggles, threshold, and cached colors");
+            Check(reloaded.ColorRoomQuality && reloaded.ShowRoomStage && reloaded.RoomQualityTag(0, 2) == "<color=#123ABC>"
+                && reloaded.RoomQualityTag(1, 2) == "<color=#A1B2C3>", "Scribe round trip restores both room toggles and room palette");
         }
         finally
         {
@@ -270,7 +282,8 @@ internal static partial class Program
             var localization = new XmlDocument();
             localization.Load(localizationPath);
             Check(localization.DocumentElement.Name == "LanguageData" &&
-                localization.DocumentElement["BTC_ResetDefaults"] != null, $"{version} load folders include shared localization");
+                localization.DocumentElement["BTC_ResetDefaults"] != null
+                && localization.DocumentElement["BTC_RoomStageIndicator"] != null, $"{version} load folders include shared localization");
 
             var assemblies = paths.Select(folder => Path.Combine(folder.folderName, "Assemblies"))
                 .Where(Directory.Exists).SelectMany(folder => Directory.GetFiles(folder, "*.dll")).ToArray();

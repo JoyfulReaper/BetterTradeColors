@@ -10,4 +10,12 @@
   <BTC_DamagedColor>Damaged items</BTC_DamagedColor>
   <BTC_InvalidColor>Enter six RGB hex digits. This edit has not been applied.</BTC_InvalidColor>
   <BTC_ResetDefaults>Reset to defaults</BTC_ResetDefaults>
+  <BTC_ItemSettings>Item Coloring</BTC_ItemSettings>
+  <BTC_RoomQualitySettings>Room Quality</BTC_RoomQualitySettings>
+  <BTC_ColorRoomQuality>Color room quality descriptions</BTC_ColorRoomQuality>
+  <BTC_ShowRoomStage>Show room quality stage numbers</BTC_ShowRoomStage>
+  <BTC_RoomColorHelp>Enter six RGB hex digits for each color. The palette runs from the lowest stage to the highest stage in each room statistic.</BTC_RoomColorHelp>
+  <BTC_RoomPaletteLevel>Palette level {0} of {1}</BTC_RoomPaletteLevel>
+  <BTC_RoomStageIndicator>({0}/{1})</BTC_RoomStageIndicator>
+  <BTC_ResetRoomDefaults>Reset room settings to defaults</BTC_ResetRoomDefaults>
 </LanguageData>

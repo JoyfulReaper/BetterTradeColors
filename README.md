@@ -42,6 +42,12 @@ In the current development build for RimWorld 1.7, open **Options → Mod Settin
 
 Enter six RGB hex digits for any color, such as `#33CCFF`. The swatch shows the last valid value. Leave **Normal** blank to use the game's text color. Changes apply when item labels are next generated, and RimWorld saves them when the settings window closes. **Reset to defaults** restores the original palette, toggles, and threshold.
 
+### Room quality
+
+Under **Options → Mod Settings → Better Trade Colors → Room Quality**, turn on room quality colors, numerical stage indicators, or both. The options start off. Both appear in the room-stat overlay and its building gizmo hover panel, the selected-building room summary, and the Alt cell inspector.
+
+Impressiveness, beauty, cleanliness, spaciousness, wealth, and visible custom stats with stage definitions use their own thresholds. An indicator like **Very impressive (7/10)** shows the current stage and the total stages for that statistic. The seven-color palette runs from the first defined stage to the last. You can edit the colors with live swatches and reset the room settings independently of item coloring.
+
 ## 4.0 TECHNICAL SPECIFICATIONS & ARCHITECTURE
 
 The underlying pipeline represents an aggressive optimization refactor over legacy UI modification methods:

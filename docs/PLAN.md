@@ -28,7 +28,15 @@ Both Release targets compile and the 1.7 standalone checks pass. Manual checks s
 
 ## Phase 3 · Optional room quality coloring
 
-Workshop inspiration colors room characteristics according to quality and displays the current and maximum quality tiers alongside the labels. Decide which vanilla room views and metrics to support after inspecting the 1.7 UI. Make room coloring independently optional. [Room Quality Colors on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3407965871)
+Implemented in the shared source. The room overlay and gizmo hover panel use EnvironmentStatsDrawer.DoRoomInfo. The selected-building summary uses Gizmo_RoomStats.GizmoOnGUI, and the Alt cell inspector uses CellInspectorDrawer.DrawMapInspector. The patches format only the stage description in those methods and use their existing scores and stage lookups. Separate beauty-at-cursor displays, room role names, and raw score columns keep their vanilla formatting.
+
+Room.GetStat reuses the room's stat map until vanilla marks the room dirty. RoomStatDef.GetScoreStage chooses the last stage whose minimum score is met, with stage zero as the fallback. The installed Core definitions have 10 Impressiveness stages, 8 Beauty stages, 5 Cleanliness stages, 7 Space stages, and 9 Wealth stages. The displays rebuild their stage strings as they draw. The mod leaves the game's definitions, localized stage labels, room data, and stat cache untouched.
+
+The independent Room Quality controls start off. Colors select the nearest of seven palette entries by stage position, with endpoints mapped directly and a single stage mapped to the middle. The palette represents definition order. For example, Sterile is the last Cleanliness stage, but the palette does not decide whether a sterile room is preferable for a particular use. Visible custom stats with stages follow the same rule. Stage-less stats receive no decoration. Numbering is 1-based and uses each definition's actual stage count.
+
+To fit compact rows, the mod reuses Phase 2 truncation and preserves the complete indicator where it fits. This can shorten the description, including the inline raw score in the gizmo or cell inspector. Existing precolored descriptions retain their color. Another mod that replaces the same UI code can prevent the display patch from matching. Mods that insert their own stage numbers can also duplicate the indicator. The design was developed independently of the Workshop mod. [Room Quality Colors on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3407965871)
+
+The 1.7 standalone checks exercise the game's stage lookup with thresholds from the installed definitions and verify that all three display patches find their intended sites. The isolated 1.6 Release build compiles against the 1.6 references. Run the rendering, settings, and mod-interoperability checks in game before distributing an updated binary. See [BUILDING.md](../BUILDING.md).
 
 ## Phase 4 · Optional colonist records coloring
 

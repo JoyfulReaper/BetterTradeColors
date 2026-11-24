@@ -39,16 +39,20 @@ namespace BetterTradeColors.Settings
         private const int QualityCount = 7;
         internal const int TaintedColor = QualityCount;
         internal const int DamagedColor = QualityCount + 1;
+        private const int RoomPaletteStart = DamagedColor + 1;
+        internal const int RoomPaletteSize = 7;
 
         private static readonly string[] ColorKeys =
         {
             "AwfulColor", "PoorColor", "NormalColor", "GoodColor", "ExcellentColor",
-            "MasterworkColor", "LegendaryColor", "TaintedColor", "DamagedColor"
+            "MasterworkColor", "LegendaryColor", "TaintedColor", "DamagedColor",
+            "RoomColor1", "RoomColor2", "RoomColor3", "RoomColor4", "RoomColor5", "RoomColor6", "RoomColor7"
         };
 
         private static readonly string[] DefaultColors =
         {
-            "#666666", "#999999", "", "#66CC66", "#CCCC33", "#FF9933", "#33CCFF", "#B24C4C", "#D933BF"
+            "#666666", "#999999", "", "#66CC66", "#CCCC33", "#FF9933", "#33CCFF", "#B24C4C", "#D933BF",
+            "#666666", "#999999", "#BFBFBF", "#66CC66", "#CCCC33", "#FF9933", "#33CCFF"
         };
 
         private readonly string[] _colors = new string[DefaultColors.Length];
@@ -64,6 +68,9 @@ namespace BetterTradeColors.Settings
         internal bool ColorQuality;
         internal bool ColorTainted;
         internal bool ColorDamaged;
+        internal bool ColorRoomQuality;
+        internal bool ShowRoomStage;
+        internal bool RoomFormattingEnabled => ColorRoomQuality || ShowRoomStage;
 
         internal int DamageThreshold
         {
@@ -80,6 +87,7 @@ namespace BetterTradeColors.Settings
         public BetterTradeColorsSettings()
         {
             ResetDefaults();
+            ResetRoomDefaults();
         }
 
         internal string QualityTag(QualityCategory quality)
@@ -92,16 +100,42 @@ namespace BetterTradeColors.Settings
         {
             ColorQuality = ColorTainted = ColorDamaged = true;
             DamageThreshold = DefaultDamageThreshold;
-            for (int i = 0; i < DefaultColors.Length; i++)
-                TrySetColor(i, DefaultColors[i]);
-            ClearColorInputs();
+            ResetPalette(0, RoomPaletteStart);
         }
 
-        internal void ClearColorInputs()
+        internal void ResetRoomDefaults()
         {
-            Array.Clear(_colorInputs, 0, _colorInputs.Length);
-            Array.Clear(_invalidColorInputs, 0, _invalidColorInputs.Length);
+            ColorRoomQuality = ShowRoomStage = false;
+            ResetPalette(RoomPaletteStart, RoomPaletteSize);
         }
+
+        private void ResetPalette(int start, int count)
+        {
+            for (int i = start; i < start + count; i++)
+                TrySetColor(i, DefaultColors[i]);
+            ClearColorInputs(start, count);
+        }
+
+        internal void ClearColorInputs() => ClearColorInputs(0, _colors.Length);
+
+        private void ClearColorInputs(int start, int count)
+        {
+            Array.Clear(_colorInputs, start, count);
+            Array.Clear(_invalidColorInputs, start, count);
+        }
+
+        internal string RoomQualityTag(int stage, int stageCount)
+        {
+            if (stage < 0 || stage >= stageCount)
+                return null;
+
+            int last = stageCount - 1;
+            int slot = last == 0 ? RoomPaletteSize / 2 : (int)(((long)stage * (RoomPaletteSize - 1) + last / 2) / last);
+            return _colorTags[RoomPaletteStart + slot];
+        }
+
+        internal bool TrySetRoomColor(int slot, string input) =>
+            (uint)slot < RoomPaletteSize && TrySetColor(RoomPaletteStart + slot, input);
 
         internal bool TrySetColor(int index, string input)
         {
@@ -143,6 +177,7 @@ namespace BetterTradeColors.Settings
             _listing.Label("BTC_SettingsVersion".Translate(Version));
             _listing.Gap();
 
+            _listing.Label("BTC_ItemSettings".Translate());
             float labelWidth = (width - 28f) / width;
             _listing.CheckboxLabeled("BTC_ColorQuality".Translate(), ref ColorQuality, labelPct: labelWidth);
             _listing.CheckboxLabeled("BTC_ColorTainted".Translate(), ref ColorTainted, labelPct: labelWidth);
@@ -163,6 +198,20 @@ namespace BetterTradeColors.Settings
             string resetLabel = "BTC_ResetDefaults".Translate();
             if (Widgets.ButtonText(_listing.GetRect(Math.Max(30f, Text.CalcHeight(resetLabel, width - 12f) + 8f)), resetLabel))
                 ResetDefaults();
+            _listing.GapLine();
+            _listing.Label("BTC_RoomQualitySettings".Translate());
+            _listing.CheckboxLabeled("BTC_ColorRoomQuality".Translate(), ref ColorRoomQuality, labelPct: labelWidth);
+            _listing.CheckboxLabeled("BTC_ShowRoomStage".Translate(), ref ShowRoomStage, labelPct: labelWidth);
+            _listing.Gap();
+            _listing.Label("BTC_RoomColorHelp".Translate());
+            _listing.Gap(6f);
+            for (int i = 0; i < RoomPaletteSize; i++)
+                DrawColorRow(RoomPaletteStart + i, "BTC_RoomPaletteLevel".Translate(i + 1, RoomPaletteSize));
+
+            _listing.Gap();
+            string resetRoomLabel = "BTC_ResetRoomDefaults".Translate();
+            if (Widgets.ButtonText(_listing.GetRect(Math.Max(30f, Text.CalcHeight(resetRoomLabel, width - 12f) + 8f)), resetRoomLabel))
+                ResetRoomDefaults();
             _contentHeight = _listing.CurHeight;
             _listing.End();
             Widgets.EndScrollView();
@@ -206,6 +255,8 @@ namespace BetterTradeColors.Settings
             LookToggle(ref ColorQuality, "ColorQuality");
             LookToggle(ref ColorTainted, "ColorTainted");
             LookToggle(ref ColorDamaged, "ColorDamaged");
+            LookToggle(ref ColorRoomQuality, "ColorRoomQuality", defaultValue: false);
+            LookToggle(ref ShowRoomStage, "ShowRoomStage", defaultValue: false);
             string threshold = _damageThreshold.ToString(CultureInfo.InvariantCulture);
             Scribe_Values.Look(ref threshold, "DamageThreshold", DefaultDamageThreshold.ToString(CultureInfo.InvariantCulture));
 
@@ -226,12 +277,12 @@ namespace BetterTradeColors.Settings
             }
         }
 
-        private static void LookToggle(ref bool enabled, string key)
+        private static void LookToggle(ref bool enabled, string key, bool defaultValue = true)
         {
             string value = enabled.ToString();
-            Scribe_Values.Look(ref value, key, bool.TrueString);
+            Scribe_Values.Look(ref value, key, defaultValue.ToString());
             if (Scribe.mode == LoadSaveMode.LoadingVars)
-                enabled = !bool.TryParse(value, out bool parsed) || parsed;
+                enabled = bool.TryParse(value, out bool parsed) ? parsed : defaultValue;
         }
     }
 }

@@ -39,6 +39,14 @@ The settings UI uses RimWorld's `Widgets` and `Listing_Standard`, with geometry 
 - `Verse.GenText.Truncate(TaggedString, float, Dictionary<string, TaggedString>)`
 - `Verse.Text.ClampTextWithEllipsis(Rect, string)`
 
+The room quality patches transpile three presentation methods. They use the RoomStatDef, score, and stage already used by each view. No room or stat caches are scanned or refreshed by the mod.
+
+- EnvironmentStatsDrawer.DoRoomInfo(Room, ref float, Rect) covers the room overlay and the gizmo hover panel. The patch also fits the stage description to its fixed-width column.
+- Gizmo_RoomStats.GizmoOnGUI(Vector2, float, GizmoRenderParms) covers the selected-building room summary, including the Impressiveness title.
+- CellInspectorDrawer.DrawMapInspector() covers only the room-stat row in the Alt inspector, and uses the width and inset of vanilla's info column.
+
+The transpiler checks the expected display call sites and logs a warning if a changed method cannot safely be patched. A competing UI replacement or localization mod that appends its own numbers can change the result. Precolored stage labels keep their existing color. Phase 3 caches the seven palette tags and reuses the Phase 2 layout cache. Additional measurements can occur when space must be reserved for a complete stage indicator.
+
 ## RimWorld 1.6
 
 The shipped `Common/Assemblies/BetterTradeColors.dll` remains unchanged from version 0.2.0. `LoadFolders.xml` selects the `Common` assembly for 1.6 and the `1.7` assembly for 1.7. Both versions also load the localization-only `Shared` folder.
@@ -50,7 +58,7 @@ dotnet build Source/BetterTradeColors.csproj -c Release `
   -p:RimWorldVersion=1.6 `
   -p:RimWorldDir="D:/Games/RimWorld-1.6" `
   -p:HarmonyDir="D:/SteamLibrary/steamapps/workshop/content/294100/2009463077" `
-  -p:OutputPath="../Tests/obj/Phase2Release16/"
+  -p:OutputPath="../Tests/obj/Phase3Release16/"
 ```
 
 `RimWorldManagedDir` can override the 1.6 managed-reference directory directly. For an experimental 1.6 in-game test, use a separate staging copy of the mod. Put the rebuilt DLL under its `Common/Assemblies` folder and include `Shared/Languages`. Future 1.6 packages can use that same shared localization without copying or maintaining a second set of strings.
@@ -61,8 +69,8 @@ The standalone check program patches the installed 1.7 game assembly using its m
 
 ```powershell
 dotnet build Tests/CompatibilityChecks.csproj -c Release `
-  -p:OutputPath="../Tests/obj/Phase2Release17/"
-dotnet Tests/obj/Phase2Release17/CompatibilityChecks.dll `
+  -p:OutputPath="../Tests/obj/Phase3Release17/"
+dotnet Tests/obj/Phase3Release17/CompatibilityChecks.dll `
   "H:/SteamLibrary/steamapps/common/RimWorld" `
   "H:/SteamLibrary/steamapps/workshop/content/294100/2009463077"
 ```
@@ -70,6 +78,14 @@ dotnet Tests/obj/Phase2Release17/CompatibilityChecks.dll `
 For other installations, pass `RimWorldDir` and `HarmonyDir` as build properties and supply those directories as the two runtime arguments.
 
 The checks cover Phase 1 color selection and Scribe persistence. They also compare the unpatched and patched width truncators, exercise nesting, adjacent colors, stack counts, narrow or empty input, Unicode, caller dictionaries, and cache isolation across widths, fonts, UI scales, and settings edits. Packaging checks verify both versions find the shared localization and exactly one mod assembly.
+
+Phase 3 also checks the installed room-stage boundaries, injected display sites, the independent options and resets, shared translations, Scribe persistence and invalid input, custom stats, and truncation with a reserved stage indicator.
+
+## Phase 3 verification
+
+- **1.7 Release and standalone checks:** Passed against RimWorld 1.7.5014 rev1195 and Harmony 3.
+- **1.6 Release compile:** Passed against local Krafs.Rimworld.Ref 1.6.4871 and Harmony 2. Actual 1.6 display patch matching and rendering remain unverified.
+- **Artifacts:** Both Phase 3 outputs are isolated under Tests/obj. Both packaged DLLs were preserved.
 
 ## Phase 2 verification
 
@@ -81,13 +97,17 @@ The standalone runner simulates font metrics and counts measurements without lau
 
 ## Manual in-game checklist
 
-Use the 1.7 Release DLL from Tests/obj/Phase2Release17 in a staging copy. Include Shared/Languages and enable Harmony.
+Use the 1.7 Release DLL from Tests/obj/Phase3Release17 in a staging copy. Include Shared/Languages and enable Harmony.
 
 1. In a loaded colony, check inspect titles and the cell inspector with long item labels. Resize the window or change UI scale to make columns narrow. Verify the ellipsis fits, active formatting ends at the label, and adjacent UI text uses its usual color.
 2. Check trade, caravan, inventory, and inspect screens with stacked items. Verify counts stay uncolored when the count fits, and that counts and sorting remain correct.
 3. Check a UI mod or test definition with nested bold, italic, size, and adjacent color spans. Verify text widths, original local color overrides, and Unicode glyphs with actual game fonts. Try the same label in different font sizes and column widths.
 4. In a loaded colony, change a color and a toggle, then revisit the same item. Verify updated labels and swatches, then check persistence and Reset after restarting. Check small settings layouts and original priority, threshold, and non-apparel damage behavior.
 5. Profile repeated narrow labels in a dense UI and watch for allocation spikes or an increased layout cost. Compare Harmony-only and the staged build under the same UI scale and font.
-6. Repeat the rendering and settings checks for the experimental 1.6 build. Treat the 1.6 compile and all simulated metrics as separate from in-game verification.
+6. Compare both room options off, colors only, numbers only, and both on. Use the room stats overlay, an eligible selected building and its hover panel, and the Alt cell inspector. Verify current/max stages and the original room name and score formatting. Include clean/sterile rooms, rooms at different impressiveness or wealth stages, and a staged custom room statistic if available.
+7. Narrow the windows or raise UI scale and try a longer localization. Verify descriptions shorten cleanly, the complete indicator stays visible when it fits, and colors stop at the end of the description. Watch for competing UI mods that already color or number room descriptions.
+8. Edit the room palette, close settings, restart, and check both toggles and swatches. Reset the room settings and verify item colors and thresholds stay as configured. Repeat the rendering and settings checks for the experimental 1.6 build.
+
+Standalone room tests verify the transformed methods and stage formatters with simulated text metrics. They do not render any of the game windows.
 
 See [docs/PLAN.md](docs/PLAN.md) for the source findings and remaining limitations.
