@@ -89,6 +89,7 @@ internal static partial class Program
 
             VerifyRichText(thing);
             VerifyRoomQuality(rimWorldDir, owner);
+            VerifyColonistRecords(harmony);
             VerifyLoadFolders();
             Console.WriteLine("Compatibility checks passed. In-game rendering still requires verification.");
             return 0;
@@ -191,7 +192,7 @@ internal static partial class Program
             var settings = ReadSettings(path);
             Check(settings.ColorQuality && settings.ColorTainted && settings.ColorDamaged
                 && settings.DamageThreshold == 50 && settings.QualityTag(QualityCategory.Normal) == null
-                && settings.QualityTag(QualityCategory.Awful) == "<color=#666666>" && !settings.RoomFormattingEnabled, "Legacy settings load with the previous default behavior");
+                && settings.QualityTag(QualityCategory.Awful) == "<color=#666666>" && !settings.RoomFormattingEnabled && !settings.ColorColonistRecords, "Legacy settings load with the previous default behavior");
 
             File.WriteAllText(path, """
                 <SettingsBlock>
@@ -203,6 +204,9 @@ internal static partial class Program
                     <ColorRoomQuality>broken</ColorRoomQuality>
                     <ShowRoomStage>invalid</ShowRoomStage>
                     <RoomColor1>#bad</RoomColor1>
+                    <ColorColonistRecords>invalid</ColorColonistRecords>
+                    <RecordHolderColor>#bad</RecordHolderColor>
+                    <NonRecordHolderColor>  a1b2c3  </NonRecordHolderColor>
                     <RoomColor7>  a1b2c3  </RoomColor7>
                     <NormalColor>  11aa22  </NormalColor>
                   </ModSettings>
@@ -220,6 +224,14 @@ internal static partial class Program
 
             settings.ColorQuality = false;
             settings.ColorDamaged = false;
+            Check(!settings.ColorColonistRecords
+                && settings.RecordTag(BetterTradeColorsSettings.RecordHolderColor) == "<color=#66CC66>"
+                && settings.RecordTag(BetterTradeColorsSettings.NonRecordHolderColor) == "<color=#A1B2C3>"
+                && settings.RecordTag(BetterTradeColorsSettings.UnachievedRecordColor) == null,
+                "Malformed records settings fall back and valid colors normalize");
+
+            settings.ColorColonistRecords = true;
+            settings.TrySetColor(BetterTradeColorsSettings.UnachievedRecordColor, "#988776");
             settings.DamageThreshold = 64;
             settings.ColorRoomQuality = true;
             settings.ShowRoomStage = true;
@@ -240,6 +252,10 @@ internal static partial class Program
                 "Scribe round trip restores toggles, threshold, and cached colors");
             Check(reloaded.ColorRoomQuality && reloaded.ShowRoomStage && reloaded.RoomQualityTag(0, 2) == "<color=#123ABC>"
                 && reloaded.RoomQualityTag(1, 2) == "<color=#A1B2C3>", "Scribe round trip restores both room toggles and room palette");
+            Check(reloaded.ColorColonistRecords
+                && reloaded.RecordTag(BetterTradeColorsSettings.NonRecordHolderColor) == "<color=#A1B2C3>"
+                && reloaded.RecordTag(BetterTradeColorsSettings.UnachievedRecordColor) == "<color=#988776>",
+                "Scribe round trip restores records toggle and palette");
         }
         finally
         {
@@ -283,7 +299,8 @@ internal static partial class Program
             localization.Load(localizationPath);
             Check(localization.DocumentElement.Name == "LanguageData" &&
                 localization.DocumentElement["BTC_ResetDefaults"] != null
-                && localization.DocumentElement["BTC_RoomStageIndicator"] != null, $"{version} load folders include shared localization");
+                && localization.DocumentElement["BTC_RoomStageIndicator"] != null
+                && localization.DocumentElement["BTC_ColonistRecordsSettings"] != null, $"{version} load folders include shared localization");
 
             var assemblies = paths.Select(folder => Path.Combine(folder.folderName, "Assemblies"))
                 .Where(Directory.Exists).SelectMany(folder => Directory.GetFiles(folder, "*.dll")).ToArray();

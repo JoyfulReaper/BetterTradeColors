@@ -18,4 +18,11 @@
   <BTC_RoomPaletteLevel>Palette level {0} of {1}</BTC_RoomPaletteLevel>
   <BTC_RoomStageIndicator>({0}/{1})</BTC_RoomStageIndicator>
   <BTC_ResetRoomDefaults>Reset room settings to defaults</BTC_ResetRoomDefaults>
+  <BTC_ColonistRecordsSettings>Colonist Records</BTC_ColonistRecordsSettings>
+  <BTC_ColorColonistRecords>Color colonist record values</BTC_ColorColonistRecords>
+  <BTC_RecordColorHelp>Enter six RGB hex digits for each color. Leave Unachieved blank to inherit the game's text color. Colors compare numerical values across colonists.</BTC_RecordColorHelp>
+  <BTC_RecordHolderColor>Holds or shares the record</BTC_RecordHolderColor>
+  <BTC_NonRecordHolderColor>Below the colony record</BTC_NonRecordHolderColor>
+  <BTC_UnachievedRecordColor>Unachieved</BTC_UnachievedRecordColor>
+  <BTC_ResetRecordsDefaults>Reset records settings to defaults</BTC_ResetRecordsDefaults>
 </LanguageData>

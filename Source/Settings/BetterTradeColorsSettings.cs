@@ -41,18 +41,23 @@ namespace BetterTradeColors.Settings
         internal const int DamagedColor = QualityCount + 1;
         private const int RoomPaletteStart = DamagedColor + 1;
         internal const int RoomPaletteSize = 7;
+        internal const int RecordHolderColor = RoomPaletteStart + RoomPaletteSize;
+        internal const int NonRecordHolderColor = RecordHolderColor + 1;
+        internal const int UnachievedRecordColor = NonRecordHolderColor + 1;
 
         private static readonly string[] ColorKeys =
         {
             "AwfulColor", "PoorColor", "NormalColor", "GoodColor", "ExcellentColor",
             "MasterworkColor", "LegendaryColor", "TaintedColor", "DamagedColor",
-            "RoomColor1", "RoomColor2", "RoomColor3", "RoomColor4", "RoomColor5", "RoomColor6", "RoomColor7"
+            "RoomColor1", "RoomColor2", "RoomColor3", "RoomColor4", "RoomColor5", "RoomColor6", "RoomColor7",
+            "RecordHolderColor", "NonRecordHolderColor", "UnachievedRecordColor"
         };
 
         private static readonly string[] DefaultColors =
         {
             "#666666", "#999999", "", "#66CC66", "#CCCC33", "#FF9933", "#33CCFF", "#B24C4C", "#D933BF",
-            "#666666", "#999999", "#BFBFBF", "#66CC66", "#CCCC33", "#FF9933", "#33CCFF"
+            "#666666", "#999999", "#BFBFBF", "#66CC66", "#CCCC33", "#FF9933", "#33CCFF",
+            "#66CC66", "#CCCC33", ""
         };
 
         private readonly string[] _colors = new string[DefaultColors.Length];
@@ -70,6 +75,7 @@ namespace BetterTradeColors.Settings
         internal bool ColorDamaged;
         internal bool ColorRoomQuality;
         internal bool ShowRoomStage;
+        internal bool ColorColonistRecords;
         internal bool RoomFormattingEnabled => ColorRoomQuality || ShowRoomStage;
 
         internal int DamageThreshold
@@ -81,13 +87,14 @@ namespace BetterTradeColors.Settings
         internal string TaintedTag => _colorTags[TaintedColor];
         internal string DamagedTag => _colorTags[DamagedColor];
 
-        public string Version => "0.4.0";
+        public string Version => "0.5.0";
         public readonly string MessagePrefix = "[BetterTradeColors]";
 
         public BetterTradeColorsSettings()
         {
             ResetDefaults();
             ResetRoomDefaults();
+            ResetRecordsDefaults();
         }
 
         internal string QualityTag(QualityCategory quality)
@@ -108,6 +115,14 @@ namespace BetterTradeColors.Settings
             ColorRoomQuality = ShowRoomStage = false;
             ResetPalette(RoomPaletteStart, RoomPaletteSize);
         }
+
+        internal void ResetRecordsDefaults()
+        {
+            ColorColonistRecords = false;
+            ResetPalette(RecordHolderColor, 3);
+        }
+
+        internal string RecordTag(int colorIndex) => _colorTags[colorIndex];
 
         private void ResetPalette(int start, int count)
         {
@@ -140,7 +155,7 @@ namespace BetterTradeColors.Settings
         internal bool TrySetColor(int index, string input)
         {
             string hex = input?.Trim() ?? "";
-            if (index == (int)QualityCategory.Normal && hex.Length == 0)
+            if (hex.Length == 0 && (index == (int)QualityCategory.Normal || index == UnachievedRecordColor))
             {
                 _colors[index] = "";
                 _colorTags[index] = null;
@@ -212,6 +227,20 @@ namespace BetterTradeColors.Settings
             string resetRoomLabel = "BTC_ResetRoomDefaults".Translate();
             if (Widgets.ButtonText(_listing.GetRect(Math.Max(30f, Text.CalcHeight(resetRoomLabel, width - 12f) + 8f)), resetRoomLabel))
                 ResetRoomDefaults();
+            _listing.GapLine();
+            _listing.Label("BTC_ColonistRecordsSettings".Translate());
+            _listing.CheckboxLabeled("BTC_ColorColonistRecords".Translate(), ref ColorColonistRecords, labelPct: labelWidth);
+            _listing.Gap();
+            _listing.Label("BTC_RecordColorHelp".Translate());
+            _listing.Gap(6f);
+            DrawColorRow(RecordHolderColor, "BTC_RecordHolderColor".Translate());
+            DrawColorRow(NonRecordHolderColor, "BTC_NonRecordHolderColor".Translate());
+            DrawColorRow(UnachievedRecordColor, "BTC_UnachievedRecordColor".Translate());
+
+            _listing.Gap();
+            string resetRecordsLabel = "BTC_ResetRecordsDefaults".Translate();
+            if (Widgets.ButtonText(_listing.GetRect(Math.Max(30f, Text.CalcHeight(resetRecordsLabel, width - 12f) + 8f)), resetRecordsLabel))
+                ResetRecordsDefaults();
             _contentHeight = _listing.CurHeight;
             _listing.End();
             Widgets.EndScrollView();
@@ -257,6 +286,7 @@ namespace BetterTradeColors.Settings
             LookToggle(ref ColorDamaged, "ColorDamaged");
             LookToggle(ref ColorRoomQuality, "ColorRoomQuality", defaultValue: false);
             LookToggle(ref ShowRoomStage, "ShowRoomStage", defaultValue: false);
+            LookToggle(ref ColorColonistRecords, "ColorColonistRecords", defaultValue: false);
             string threshold = _damageThreshold.ToString(CultureInfo.InvariantCulture);
             Scribe_Values.Look(ref threshold, "DamageThreshold", DefaultDamageThreshold.ToString(CultureInfo.InvariantCulture));
 

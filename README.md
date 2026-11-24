@@ -48,6 +48,12 @@ Under **Options → Mod Settings → Better Trade Colors → Room Quality**, tur
 
 Impressiveness, beauty, cleanliness, spaciousness, wealth, and visible custom stats with stage definitions use their own thresholds. An indicator like **Very impressive (7/10)** shows the current stage and the total stages for that statistic. The seven-color palette runs from the first defined stage to the last. You can edit the colors with live swatches and reset the room settings independently of item coloring.
 
+### Colonist records
+
+Under **Options → Mod Settings → Better Trade Colors → Colonist Records**, enable coloring for the value column in vanilla's **Records** tab. The option starts off. Green marks a positive maximum, including ties. Yellow marks a value below a positive maximum. When nobody has a positive value, the text inherits the game's color. You can customize all three colors and reset them separately.
+
+Comparisons include living free colonists on active maps, in caravans, and in supported transport. They exclude slaves, prisoners, visitors and quest lodgers, animals, the deceased, and pawns outside that population. RimWorld still formats the displayed numbers and durations. Colors describe numerical rank, including for records such as damage received.
+
 ## 4.0 TECHNICAL SPECIFICATIONS & ARCHITECTURE
 
 The underlying pipeline represents an aggressive optimization refactor over legacy UI modification methods:

@@ -47,6 +47,13 @@ The room quality patches transpile three presentation methods. They use the Room
 
 The transpiler checks the expected display call sites and logs a warning if a changed method cannot safely be patched. A competing UI replacement or localization mod that appends its own numbers can change the result. Precolored stage labels keep their existing color. Phase 3 caches the seven palette tags and reuses the Phase 2 layout cache. Additional measurements can occur when space must be reserved for a complete stage indicator.
 
+The Records tab uses two presentation hooks:
+
+- RecordsCardUtility.DrawRecordsCard(Rect, Pawn) establishes the active comparison only when records coloring is enabled and a qualifying pawn is viewed in a loaded game. Its finalizer restores the previous render context, including on exceptions.
+- RecordsCardUtility.DrawRecord(float, float, float, RecordDef, Pawn) redirects only the value-cell label call. The transpiler checks for the two vanilla label sites and leaves an unrecognized layout intact. A mod that replaces the Records panel or patches its value display can bypass or override the coloring.
+
+The snapshot traverses the game's free-colonist finder once per open-card frame. Native enumeration includes maps and their held pawns, caravans, and supported transport. The comparison filters for eligible living colonists and reads stored record values directly for precise rankings. It reuses the maximum array and the pawn ID set, without holding pawn references. A short game-tick window would stick while the info card pauses the game. Frame-based reuse handles repeat GUI passes, changes while paused, and world switches. A new snapshot costs one read per stored slot per eligible pawn. Each value cell then reads just the selected pawn's value and reuses a cached color tag.
+
 ## RimWorld 1.6
 
 The shipped `Common/Assemblies/BetterTradeColors.dll` remains unchanged from version 0.2.0. `LoadFolders.xml` selects the `Common` assembly for 1.6 and the `1.7` assembly for 1.7. Both versions also load the localization-only `Shared` folder.
@@ -58,7 +65,7 @@ dotnet build Source/BetterTradeColors.csproj -c Release `
   -p:RimWorldVersion=1.6 `
   -p:RimWorldDir="D:/Games/RimWorld-1.6" `
   -p:HarmonyDir="D:/SteamLibrary/steamapps/workshop/content/294100/2009463077" `
-  -p:OutputPath="../Tests/obj/Phase3Release16/"
+  -p:OutputPath="../Tests/obj/Phase4Release16/"
 ```
 
 `RimWorldManagedDir` can override the 1.6 managed-reference directory directly. For an experimental 1.6 in-game test, use a separate staging copy of the mod. Put the rebuilt DLL under its `Common/Assemblies` folder and include `Shared/Languages`. Future 1.6 packages can use that same shared localization without copying or maintaining a second set of strings.
@@ -69,8 +76,8 @@ The standalone check program patches the installed 1.7 game assembly using its m
 
 ```powershell
 dotnet build Tests/CompatibilityChecks.csproj -c Release `
-  -p:OutputPath="../Tests/obj/Phase3Release17/"
-dotnet Tests/obj/Phase3Release17/CompatibilityChecks.dll `
+  -p:OutputPath="../Tests/obj/Phase4Release17/"
+dotnet Tests/obj/Phase4Release17/CompatibilityChecks.dll `
   "H:/SteamLibrary/steamapps/common/RimWorld" `
   "H:/SteamLibrary/steamapps/workshop/content/294100/2009463077"
 ```
@@ -80,6 +87,22 @@ For other installations, pass `RimWorldDir` and `HarmonyDir` as build properties
 The checks cover Phase 1 color selection and Scribe persistence. They also compare the unpatched and patched width truncators, exercise nesting, adjacent colors, stack counts, narrow or empty input, Unicode, caller dictionaries, and cache isolation across widths, fonts, UI scales, and settings edits. Packaging checks verify both versions find the shared localization and exactly one mod assembly.
 
 Phase 3 also checks the installed room-stage boundaries, injected display sites, the independent options and resets, shared translations, Scribe persistence and invalid input, custom stats, and truncation with a reserved stage indicator.
+
+The Phase 4 standalone checks exercise the two Records tab hooks, raw and formatted value differences, ties, non-finite values, world and membership changes, native map, caravan, and travelling transport enumeration with fixtures, and persisted records settings. The benchmark runs each colony size for 120 frames with three simulated UI passes per frame. The printed allocation and timing figures cover warmed snapshot refreshes and comparisons. They exclude native map-holder traversal, formatting, and rendering.
+
+One local .NET 10 run with tiered compilation disabled (DOTNET_TieredCompilation=0) produced these totals. Each fixture enumerated its population once per frame. Raw lookup counts are derived from the populated fixture sizes and checked row counts.
+
+| Colonists | Records | Enumerations | Raw lookups | Allocated bytes | Time |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 15 | 40 | 120 | 86,400 | 0 | 0.31 ms |
+| 100 | 80 | 120 | 988,800 | 0 | 1.60 ms |
+| 400 | 160 | 120 | 7,737,600 | 0 | 10.11 ms |
+
+## Phase 4 verification
+
+- **1.7 Release and standalone checks:** Passed against RimWorld 1.7.5014 rev1195 and Harmony 3.
+- **1.6 Release compile:** Passed against local Krafs.Rimworld.Ref 1.6.4871 and Harmony 2. Runtime patch matching and rendering are unverified.
+- **Artifacts:** Both Phase 4 outputs are isolated under Tests/obj. The packaged DLLs were preserved.
 
 ## Phase 3 verification
 
@@ -97,7 +120,7 @@ The standalone runner simulates font metrics and counts measurements without lau
 
 ## Manual in-game checklist
 
-Use the 1.7 Release DLL from Tests/obj/Phase3Release17 in a staging copy. Include Shared/Languages and enable Harmony.
+Use the 1.7 Release DLL from Tests/obj/Phase4Release17 in a staging copy. Include Shared/Languages and enable Harmony.
 
 1. In a loaded colony, check inspect titles and the cell inspector with long item labels. Resize the window or change UI scale to make columns narrow. Verify the ellipsis fits, active formatting ends at the label, and adjacent UI text uses its usual color.
 2. Check trade, caravan, inventory, and inspect screens with stacked items. Verify counts stay uncolored when the count fits, and that counts and sorting remain correct.
@@ -108,6 +131,10 @@ Use the 1.7 Release DLL from Tests/obj/Phase3Release17 in a staging copy. Includ
 7. Narrow the windows or raise UI scale and try a longer localization. Verify descriptions shorten cleanly, the complete indicator stays visible when it fits, and colors stop at the end of the description. Watch for competing UI mods that already color or number room descriptions.
 8. Edit the room palette, close settings, restart, and check both toggles and swatches. Reset the room settings and verify item colors and thresholds stay as configured. Repeat the rendering and settings checks for the experimental 1.6 build.
 
-Standalone room tests verify the transformed methods and stage formatters with simulated text metrics. They do not render any of the game windows.
+9. Open the Records tab for a lone colonist and then for a colony with positive ties, lower records, and all-zero records. Check integer, decimal, and duration formatting, labels, scrolling, tooltips, and mixed rich text with coloring off and on.
+10. Compare a colony split across maps, a caravan, and travelling transport. Check that slaves, prisoners, guests, and pawn previews outside the active colony keep their usual display. Launch or land a transport, switch saves, and reopen the card after changing a record.
+11. Customize and reset the records colors, including a blank unachieved color, and restart to verify persistence. Test a modded record and a Records tab UI mod. Profile open and closed Records tabs in a larger colony. On the separate 1.6 build, confirm the hooks match and repeat the display checks.
+
+Standalone tests verify the transformed methods, formatting, and comparison logic with simulated text metrics and in-memory game data. Rendering still requires a running game.
 
 See [docs/PLAN.md](docs/PLAN.md) for the source findings and remaining limitations.
