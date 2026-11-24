@@ -74,7 +74,7 @@ namespace BetterTradeColors.Settings
         internal string TaintedTag => _colorTags[TaintedColor];
         internal string DamagedTag => _colorTags[DamagedColor];
 
-        public string Version => "0.3.0";
+        public string Version => "0.4.0";
         public readonly string MessagePrefix = "[BetterTradeColors]";
 
         public BetterTradeColorsSettings()
