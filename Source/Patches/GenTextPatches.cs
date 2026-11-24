@@ -1,4 +1,4 @@
-﻿/**BSD 2-Clause License
+/**BSD 2-Clause License
 
 Copyright (c) 2026, Kyle Givler
 
@@ -25,43 +25,46 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **/
 
 using HarmonyLib;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 using Verse;
 
 namespace BetterTradeColors.Patches;
 
-// =========================================================================
-// Make the global string truncator RichText-aware
-// =========================================================================
 [HarmonyPatch(typeof(GenText), nameof(GenText.Truncate), new[] { typeof(string), typeof(float), typeof(Dictionary<string, string>) })]
 public static class Patch_GenText_Truncate
 {
-    public static bool Prefix(string str, float width, Dictionary<string, string> cache, ref string __result)
+    public static bool Prefix(string str, float width, ref string __result)
     {
-        if (string.IsNullOrEmpty(str))
+        if (!string.IsNullOrEmpty(str) && !LabelRichText.HasColorMarkup(str))
             return true;
 
-        // If there's no color tag, let the game handle it normally
-        if (str.IndexOf("<color=", System.StringComparison.Ordinal) == -1)
-            return true;
-
-        // Check cache
-        if (cache != null && cache.TryGetValue(str, out __result))
-        {
-            return false;
-        }
-
-        TaggedString tagged = new TaggedString(str);
-        TaggedString safelyTruncated = tagged.Truncate(width, null);
-
-        __result = safelyTruncated.RawText;
-
-        // Save to cache
-        if (cache != null)
-        {
-            cache[str] = __result;
-        }
-
+        __result = string.IsNullOrEmpty(str) ? str : LabelRichText.Truncate(str, width);
         return false;
+    }
+}
+
+[HarmonyPatch(typeof(GenText), nameof(GenText.Truncate), new[] { typeof(TaggedString), typeof(float), typeof(Dictionary<string, TaggedString>) })]
+internal static class Patch_GenText_TruncateTaggedString
+{
+    private static bool Prefix(TaggedString str, float width, ref TaggedString __result)
+    {
+        string text = str.RawText;
+        if (!string.IsNullOrEmpty(text) && !LabelRichText.HasColorMarkup(text))
+            return true;
+
+        __result = string.IsNullOrEmpty(text) ? str : new TaggedString(LabelRichText.Truncate(text, width, tagged: true));
+        return false;
+    }
+}
+
+[HarmonyPatch(typeof(Text), nameof(Text.ClampTextWithEllipsis))]
+internal static class Patch_Text_ClampTextWithEllipsis
+{
+    private static bool Prefix(Rect rect, string text, ref string __result)
+    {
+        // Keep the same inset as the vanilla clamp.
+        return Patch_GenText_Truncate.Prefix(text, rect.width - 13f, ref __result);
     }
 }

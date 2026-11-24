@@ -15,7 +15,7 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 
-internal static class Program
+internal static partial class Program
 {
     // Resolve installed dependencies without copying game or Harmony DLLs into the mod.
     public static int Main(string[] args)
@@ -52,6 +52,7 @@ internal static class Program
             // the game's stat lookup, which requires a running game's databases.
             harmony.Patch(AccessTools.PropertyGetter(typeof(Thing), nameof(Thing.MaxHitPoints)),
                 prefix: new HarmonyMethod(typeof(Program), nameof(MaxHitPoints)));
+            SetUpTextChecks(harmony);
             harmony.PatchAll(typeof(BetterTradeColorsMod).Assembly);
             var labelMethod = AccessTools.Method(typeof(GenLabel), nameof(GenLabel.ThingLabel),
                 new[] { typeof(Thing), typeof(int), typeof(bool), typeof(bool) });
@@ -84,22 +85,9 @@ internal static class Program
             Check(label == "<color=#B24C4C>tainted item</color>", "Taint overrides damage");
 
             VerifyColorSettings(thing, apparel);
-            AccessTools.Field(typeof(Prefs), "data").SetValue(null, new PrefsData());
             VerifySettingsXml();
 
-            string input = "<color=#33CCFF>test item</color>";
-            // Disable tiny fonts in the fixture so Text does not need player preferences.
-            LanguageDatabase.activeLanguage = new LoadedLanguage("English")
-            {
-                info = new LanguageInfo { canBeTiny = false }
-            };
-            Check(GenText.Truncate(input, float.MaxValue, null) == input, "Uncached text that fits keeps its color tags");
-            var cache = new Dictionary<string, string> { [input] = "cached result" };
-            Check(GenText.Truncate(input, 10f, cache) == "cached result", "Truncation cache is honored");
-            string result = null;
-            Check(Patch_GenText_Truncate.Prefix("plain label", 100f, null, ref result), "Plain text uses vanilla truncation");
-            Check(Patch_GenText_Truncate.Prefix(null, 100f, null, ref result), "Null text uses vanilla truncation");
-
+            VerifyRichText(thing);
             VerifyLoadFolders();
             Console.WriteLine("Compatibility checks passed. In-game rendering still requires verification.");
             return 0;
@@ -277,17 +265,15 @@ internal static class Program
         foreach (string version in new[] { "1.6", "1.7" })
         {
             var paths = folders.FoldersForVersion(version);
-            if (version == "1.7")
-            {
-                string localizationPath = paths.Select(folder =>
-                    Path.Combine(folder.folderName, "Languages", "English", "Keyed", "BetterTradeColors.xml")).Single(File.Exists);
-                var localization = new XmlDocument();
-                localization.Load(localizationPath);
-                Check(localization.DocumentElement.Name == "LanguageData" &&
-                    localization.DocumentElement["BTC_ResetDefaults"] != null, "1.7 load folders include Phase 1 localization");
-            }
-            var assemblies = paths.SelectMany(folder => Directory.GetFiles(
-                Path.Combine(folder.folderName, "Assemblies"), "*.dll")).ToArray();
+            string localizationPath = paths.Select(folder =>
+                Path.Combine(folder.folderName, "Languages", "English", "Keyed", "BetterTradeColors.xml")).Single(File.Exists);
+            var localization = new XmlDocument();
+            localization.Load(localizationPath);
+            Check(localization.DocumentElement.Name == "LanguageData" &&
+                localization.DocumentElement["BTC_ResetDefaults"] != null, $"{version} load folders include shared localization");
+
+            var assemblies = paths.Select(folder => Path.Combine(folder.folderName, "Assemblies"))
+                .Where(Directory.Exists).SelectMany(folder => Directory.GetFiles(folder, "*.dll")).ToArray();
             Check(assemblies.Length == 1 && Path.GetFileName(assemblies[0]) == "BetterTradeColors.dll",
                 $"{version} loads exactly one mod assembly");
             using var stream = File.OpenRead(assemblies[0]);

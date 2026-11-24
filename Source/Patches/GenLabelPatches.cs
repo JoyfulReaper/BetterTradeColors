@@ -28,6 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using BetterTradeColors;
 using BetterTradeColors.Settings;
+using BetterTradeColors.Patches;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -44,7 +45,7 @@ public static class Patch_GenLabel_ThingLabel
 
         string tag = GetTagForThing(t, settings);
         if (tag != null)
-            __result = string.Concat(tag, __result, "</color>");
+            __result = LabelRichText.ApplyColor(__result, tag, stackCount);
     }
 
     private static string GetTagForThing(Thing t, BetterTradeColorsSettings settings)
